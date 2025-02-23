@@ -47,6 +47,35 @@ export default function EditScreen() {
   const [value, setValue] = useState<any>(parseInitialValue());
   const [objectKey, setObjectKey] = useState('');
 
+  const handleDelete = async () => {
+    Alert.alert(
+      'Delete Field',
+      'Are you sure you want to delete this field? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // Create a new object without the deleted field
+              const { [section]: deletedField, ...remainingData } = data || {};
+              console.log(remainingData)
+              await updateData(remainingData as NowPageData);
+              await refresh(); // Refresh the now page data
+              router.back();
+            } catch (err) {
+              Alert.alert('Error', 'Failed to delete the field. Please try again.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
   useEffect(() => {
     // Set up the header buttons
     navigation.setOptions({
@@ -56,9 +85,16 @@ export default function EditScreen() {
         </TouchableOpacity>
       ),
       headerRight: () => (
-        <TouchableOpacity onPress={handleSave} style={styles.headerButton}>
-          <Text style={[styles.headerButtonText, styles.headerSaveText]}>Save</Text>
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          {isNew !== 'true' && (
+            <TouchableOpacity onPress={handleDelete} style={[styles.headerButton, styles.deleteButton]}>
+              <Ionicons name="trash-outline" size={24} color="#dc3545" />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity onPress={handleSave} style={styles.headerButton}>
+            <Text style={[styles.headerButtonText, styles.headerSaveText]}>Save</Text>
+          </TouchableOpacity>
+        </View>
       ),
       headerTitle: isNew === 'true' ? 'New Field' : section ? section.charAt(0).toUpperCase() + section.slice(1) : 'Edit',
     });
@@ -477,5 +513,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  deleteButton: {
+    marginRight: 8,
   },
 }); 
