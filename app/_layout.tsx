@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
@@ -15,8 +15,20 @@ export default function RootLayout() {
 
   return (
     <>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="+not-found" />
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen 
+          name="edit" 
+          options={{
+            presentation: 'modal',
+            headerShown: true,
+            headerTitle: 'Edit Now Page',
+            headerStyle: {
+              backgroundColor: '#fff',
+            },
+            headerShadowVisible: false,
+          }} 
+        />
       </Stack>
       <StatusBar style="auto" />
     </>

@@ -1,13 +1,29 @@
-import { View, Text, ScrollView, StyleSheet, Linking } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'expo-router';
 import { useNowPage } from '../../hooks/useNowPage';
 import { NowPageData } from '../../types/now-page';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function NowScreen() {
-  const { data, loading, error } = useNowPage();
+  const { data, loading, error, refresh } = useNowPage();
+  const router = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
 
-  if (loading) {
+  const navigateToEdit = (section?: string) => {
+    router.push({
+      pathname: '/edit',
+      params: { section }
+    });
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refresh();
+    setRefreshing(false);
+  };
+
+  if (loading && !refreshing) {
     return (
       <View style={styles.container}>
         <Text>Loading...</Text>
@@ -24,40 +40,50 @@ export default function NowScreen() {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor="#007AFF"
+          colors={["#007AFF"]}
+        />
+      }
+    >
       <View style={styles.content}>
         {data?.status && (
-          <View style={styles.section}>
+          <TouchableOpacity onPress={() => navigateToEdit('status')} style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="information-circle-outline" size={24} color="#007AFF" />
               <Text style={styles.sectionTitle}>Status</Text>
             </View>
             <Text style={styles.text}>{data.status}</Text>
-          </View>
+          </TouchableOpacity>
         )}
 
         {data?.location && (
-          <View style={styles.section}>
+          <TouchableOpacity onPress={() => navigateToEdit('location')} style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="location-outline" size={24} color="#007AFF" />
               <Text style={styles.sectionTitle}>Location</Text>
             </View>
             <Text style={styles.text}>{data.location}</Text>
-          </View>
+          </TouchableOpacity>
         )}
 
         {data?.playlist && (
-          <View style={styles.section}>
+          <TouchableOpacity onPress={() => navigateToEdit('playlist')} style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="musical-notes-outline" size={24} color="#007AFF" />
               <Text style={styles.sectionTitle}>Current Playlist</Text>
             </View>
             <Text style={styles.text}>{data.playlist.name}</Text>
-          </View>
+          </TouchableOpacity>
         )}
 
         {data?.activities && data.activities.length > 0 && (
-          <View style={styles.section}>
+          <TouchableOpacity onPress={() => navigateToEdit('activities')} style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="checkmark-circle-outline" size={24} color="#007AFF" />
               <Text style={styles.sectionTitle}>Recent Activities</Text>
@@ -65,11 +91,11 @@ export default function NowScreen() {
             {data.activities.map((activity, index) => (
               <Text key={index} style={styles.listItem}>• {activity}</Text>
             ))}
-          </View>
+          </TouchableOpacity>
         )}
 
         {data?.plans && data.plans.length > 0 && (
-          <View style={styles.section}>
+          <TouchableOpacity onPress={() => navigateToEdit('plans')} style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="calendar-outline" size={24} color="#007AFF" />
               <Text style={styles.sectionTitle}>Upcoming Plans</Text>
@@ -77,11 +103,11 @@ export default function NowScreen() {
             {data.plans.map((plan, index) => (
               <Text key={index} style={styles.listItem}>• {plan}</Text>
             ))}
-          </View>
+          </TouchableOpacity>
         )}
 
         {data?.projects && data.projects.length > 0 && (
-          <View style={styles.section}>
+          <TouchableOpacity onPress={() => navigateToEdit('projects')} style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="construct-outline" size={24} color="#007AFF" />
               <Text style={styles.sectionTitle}>Projects</Text>
@@ -89,32 +115,39 @@ export default function NowScreen() {
             {data.projects.map((project, index) => (
               <Text key={index} style={styles.listItem}>• {project}</Text>
             ))}
-          </View>
+          </TouchableOpacity>
         )}
 
         {/* Render custom fields */}
         {Object.entries(data || {}).map(([key, value]) => {
           if (!['status', 'playlist', 'activities', 'plans', 'projects', 'location'].includes(key)) {
+            // Capitalize the first letter of each word in the key
+            const capitalizedKey = key
+              .split(' ')
+              .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ');
+
             return (
-              <View key={key} style={styles.section}>
+              <TouchableOpacity key={key} onPress={() => navigateToEdit(key)} style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <Ionicons name="add-circle-outline" size={24} color="#007AFF" />
-                  <Text style={styles.sectionTitle}>{key}</Text>
+                  <Text style={styles.sectionTitle}>{capitalizedKey}</Text>
                 </View>
                 {Array.isArray(value) ? (
                   value.map((item, index) => (
                     <Text key={index} style={styles.listItem}>• {item}</Text>
                   ))
-                ) : typeof value === 'object' ? (
+                ) : typeof value === 'object' && value !== null ? (
                   Object.entries(value).map(([k, v]) => (
-                    <Text key={k} style={styles.text}>{k}: {v}</Text>
+                    <Text key={k} style={styles.text}>{k}: {String(v)}</Text>
                   ))
                 ) : (
-                  <Text style={styles.text}>{value}</Text>
+                  <Text style={styles.text}>{String(value)}</Text>
                 )}
-              </View>
+              </TouchableOpacity>
             );
           }
+          return null;
         })}
       </View>
     </ScrollView>
