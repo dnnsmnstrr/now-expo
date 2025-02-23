@@ -1,15 +1,26 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking, TextInput, ActivityIndicator } from 'react-native';
 import { useAuth } from '../../hooks/useAuth';
+import { useGistSelection } from '../../hooks/useGistSelection';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function SettingsScreen() {
-  const { isAuthenticated, login, logout, user } = useAuth();
+  const { isAuthenticated, login, logout, user, token } = useAuth();
+  const { selectedGistId, gists, loading, error, fetchGists, createGist, selectGist } = useGistSelection();
+  const [authToken, setAuthToken] = useState('');
+
+  useEffect(() => {
+    if (isAuthenticated && token) {
+      fetchGists(token);
+    }
+  }, [isAuthenticated, token]);
 
   const handleLogin = async () => {
     try {
-      await login();
-    } catch (error) {
-      Alert.alert('Error', 'Failed to login. Please try again.');
+      await login(authToken);
+      setAuthToken('');
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to login. Please try again.');
     }
   };
 
@@ -19,6 +30,85 @@ export default function SettingsScreen() {
     } catch (error) {
       Alert.alert('Error', 'Failed to logout. Please try again.');
     }
+  };
+
+  const handleCreateGist = async () => {
+    try {
+      if (!token) return;
+      await createGist(token);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to create gist. Please try again.');
+    }
+  };
+
+  const renderGistSelection = () => {
+    if (loading) {
+      return (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#007AFF" />
+        </View>
+      );
+    }
+
+    if (error) {
+      return (
+        <View style={styles.section}>
+          <Text style={styles.error}>{error}</Text>
+          <TouchableOpacity
+            style={[styles.button, styles.retryButton]}
+            onPress={() => token && fetchGists(token)}>
+            <Text style={styles.buttonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (gists.length === 0) {
+      return (
+        <View style={styles.section}>
+          <Text style={styles.description}>
+            No now.json gist found. Create one to get started with your now page.
+          </Text>
+          <TouchableOpacity
+            style={[styles.button, styles.createButton]}
+            onPress={handleCreateGist}>
+            <Text style={styles.buttonText}>Create Now Page Gist</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Select Now Page Gist</Text>
+        {gists.map(gist => (
+          <TouchableOpacity
+            key={gist.id}
+            style={[
+              styles.gistItem,
+              selectedGistId === gist.id && styles.selectedGist,
+            ]}
+            onPress={() => selectGist(gist.id)}>
+            <Ionicons
+              name={selectedGistId === gist.id ? 'radio-button-on' : 'radio-button-off'}
+              size={24}
+              color="#007AFF"
+            />
+            <View style={styles.gistInfo}>
+              <Text style={styles.gistDescription}>
+                {gist.description || 'No description'}
+              </Text>
+              <Text style={styles.gistId}>ID: {gist.id}</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity
+          style={[styles.button, styles.createButton]}
+          onPress={handleCreateGist}>
+          <Text style={styles.buttonText}>Create Another Gist</Text>
+        </TouchableOpacity>
+      </View>
+    );
   };
 
   return (
@@ -35,13 +125,35 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </>
         ) : (
-          <TouchableOpacity
-            style={[styles.button, styles.loginButton]}
-            onPress={handleLogin}>
-            <Text style={styles.buttonText}>Login with GitHub</Text>
-          </TouchableOpacity>
+          <View>
+            <Text style={styles.description}>
+              Enter your GitHub personal access token to manage your now page.
+              The token needs 'gist' scope to read and write your now page data.
+            </Text>
+            <TouchableOpacity
+              onPress={() => Linking.openURL('https://github.com/settings/tokens/new')}
+              style={styles.link}>
+              <Text style={styles.linkText}>Create a new token</Text>
+            </TouchableOpacity>
+            <TextInput
+              style={styles.input}
+              value={authToken}
+              onChangeText={setAuthToken}
+              placeholder="Enter GitHub token"
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <TouchableOpacity
+              style={[styles.button, styles.loginButton]}
+              onPress={handleLogin}>
+              <Text style={styles.buttonText}>Login with Token</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
+
+      {isAuthenticated && renderGistSelection()}
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About</Text>
@@ -80,6 +192,11 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 3,
   },
+  centered: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',
@@ -98,9 +215,18 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     backgroundColor: '#2ea44f',
+    marginTop: 12,
   },
   logoutButton: {
     backgroundColor: '#dc3545',
+  },
+  createButton: {
+    backgroundColor: '#007AFF',
+    marginTop: 12,
+  },
+  retryButton: {
+    backgroundColor: '#6c757d',
+    marginTop: 12,
   },
   buttonText: {
     color: '#fff',
@@ -119,5 +245,44 @@ const styles = StyleSheet.create({
   linkText: {
     color: '#007AFF',
     fontSize: 16,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#e5e5e5',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 8,
+  },
+  error: {
+    color: '#dc3545',
+    fontSize: 16,
+    marginBottom: 16,
+  },
+  gistItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#e5e5e5',
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  selectedGist: {
+    borderColor: '#007AFF',
+    backgroundColor: '#f0f9ff',
+  },
+  gistInfo: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  gistDescription: {
+    fontSize: 16,
+    color: '#1a1a1a',
+    marginBottom: 4,
+  },
+  gistId: {
+    fontSize: 14,
+    color: '#6c757d',
   },
 });
