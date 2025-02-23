@@ -42,6 +42,8 @@ interface GistContextType {
   createGist: (token: string) => Promise<string>;
   selectGist: (gistId: string) => Promise<void>;
   cloneGist: (token: string, gistId: string) => Promise<string>;
+  deleteGist: (token: string, gistId: string) => Promise<void>;
+  renameGist: (token: string, gistId: string, newDescription: string) => Promise<void>;
 }
 
 const GistContext = createContext<GistContextType>({
@@ -53,6 +55,8 @@ const GistContext = createContext<GistContextType>({
   createGist: async () => '',
   selectGist: async () => {},
   cloneGist: async () => '',
+  deleteGist: async () => {},
+  renameGist: async () => {},
 });
 
 export function GistProvider({ children }: { children: React.ReactNode }) {
@@ -148,11 +152,19 @@ export function GistProvider({ children }: { children: React.ReactNode }) {
         gist_id: gistId,
       });
       
+      // Transform files to match the expected format
+      const files: { [key: string]: { content: string } } = {};
+      Object.entries(sourceGist.data.files || {}).forEach(([filename, file]) => {
+        if (file && file.content) {
+          files[filename] = { content: file.content };
+        }
+      });
+      
       // Create a new gist with the same content
       const response = await octokit.request('POST /gists', {
         description: `Clone of ${sourceGist.data.description || 'Now Page Data'}`,
         public: false,
-        files: sourceGist.data.files,
+        files,
       });
       
       const newGistId = (response.data as Gist).id;
@@ -173,6 +185,53 @@ export function GistProvider({ children }: { children: React.ReactNode }) {
     setCurrentGistId(gistId);
   };
 
+  const deleteGist = async (token: string, gistId: string) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const octokit = new Octokit({ auth: token });
+      await octokit.request('DELETE /gists/{gist_id}', {
+        gist_id: gistId,
+      });
+      
+      // If we deleted the currently selected gist, clear it
+      if (currentGistId === gistId) {
+        await AsyncStorage.removeItem('selected_gist_id');
+        setCurrentGistId(null);
+      }
+      
+      await fetchGists(token); // Refresh the list
+    } catch (err) {
+      setError('Failed to delete gist');
+      console.error('Error deleting gist:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renameGist = async (token: string, gistId: string, newDescription: string) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const octokit = new Octokit({ auth: token });
+      await octokit.request('PATCH /gists/{gist_id}', {
+        gist_id: gistId,
+        description: newDescription,
+      });
+      
+      await fetchGists(token); // Refresh the list
+    } catch (err) {
+      setError('Failed to rename gist');
+      console.error('Error renaming gist:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <GistContext.Provider 
       value={{ 
@@ -183,7 +242,9 @@ export function GistProvider({ children }: { children: React.ReactNode }) {
         fetchGists, 
         createGist,
         cloneGist,
-        selectGist 
+        selectGist,
+        deleteGist,
+        renameGist
       }}
     >
       {children}

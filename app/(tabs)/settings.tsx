@@ -1,15 +1,146 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking, TextInput, ActivityIndicator, Modal, ScrollView } from 'react-native';
 import { useAuth } from '../../hooks/useAuth';
 import { useNowPage } from '../../hooks/useNowPage';
 import { useGistContext } from '../../hooks/GistContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
+interface GistMenuProps {
+  gistId: string;
+  isVisible: boolean;
+  onClose: () => void;
+  onClone: () => void;
+  onRename: () => void;
+  onDelete: () => void;
+  onOpenInBrowser: () => void;
+}
+
+function GistMenu({ gistId, isVisible, onClose, onClone, onRename, onDelete, onOpenInBrowser }: GistMenuProps) {
+  return (
+    <Modal
+      visible={isVisible}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <TouchableOpacity 
+        style={styles.modalOverlay} 
+        activeOpacity={1} 
+        onPress={onClose}
+      >
+        <View style={styles.menuContainer}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => {
+              onOpenInBrowser();
+              onClose();
+            }}
+          >
+            <Ionicons name="open-outline" size={24} color="#007AFF" />
+            <Text style={styles.menuText}>Open in Browser</Text>
+          </TouchableOpacity>
+          <View style={styles.menuSeparator} />
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => {
+              onClone();
+              onClose();
+            }}
+          >
+            <Ionicons name="copy-outline" size={24} color="#007AFF" />
+            <Text style={styles.menuText}>Clone Gist</Text>
+          </TouchableOpacity>
+          <View style={styles.menuSeparator} />
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => {
+              onRename();
+              onClose();
+            }}
+          >
+            <Ionicons name="pencil-outline" size={24} color="#007AFF" />
+            <Text style={styles.menuText}>Rename Gist</Text>
+          </TouchableOpacity>
+          <View style={styles.menuSeparator} />
+          <TouchableOpacity 
+            style={[styles.menuItem, styles.deleteMenuItem]}
+            onPress={() => {
+              onDelete();
+              onClose();
+            }}
+          >
+            <Ionicons name="trash-outline" size={24} color="#dc3545" />
+            <Text style={styles.deleteMenuText}>Delete Gist</Text>
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  );
+}
+
+interface RenameModalProps {
+  isVisible: boolean;
+  onClose: () => void;
+  onSubmit: (newName: string) => void;
+  currentName: string;
+}
+
+function RenameModal({ isVisible, onClose, onSubmit, currentName }: RenameModalProps) {
+  const [newName, setNewName] = useState(currentName);
+
+  return (
+    <Modal
+      visible={isVisible}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <TouchableOpacity 
+        style={styles.modalOverlay} 
+        activeOpacity={1} 
+        onPress={onClose}
+      >
+        <View style={[styles.menuContainer, styles.renameContainer]}>
+          <Text style={styles.renameTitle}>Rename Gist</Text>
+          <TextInput
+            style={styles.renameInput}
+            value={newName}
+            onChangeText={setNewName}
+            placeholder="Enter new name"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <View style={styles.renameButtons}>
+            <TouchableOpacity
+              style={[styles.button, styles.cancelButton]}
+              onPress={onClose}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.saveButton]}
+              onPress={() => {
+                onSubmit(newName);
+                onClose();
+              }}
+            >
+              <Text style={styles.buttonText}>Save</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  );
+}
+
 export default function SettingsScreen() {
   const { isAuthenticated, login, logout, user, token } = useAuth();
-  const { currentGistId, gists, loading, error, fetchGists, createGist, selectGist } = useGistContext();
+  const { currentGistId, gists, loading, error, fetchGists, createGist, selectGist, cloneGist, deleteGist, renameGist } = useGistContext();
   const [authToken, setAuthToken] = useState('');
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [renameModalVisible, setRenameModalVisible] = useState(false);
+  const [selectedGistId, setSelectedGistId] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -52,6 +183,69 @@ export default function SettingsScreen() {
     } catch (error) {
       Alert.alert('Error', 'Failed to select gist. Please try again.');
     }
+  };
+
+  const handleCloneGist = async (gistId: string) => {
+    try {
+      if (!token) return;
+      await cloneGist(token, gistId);
+      // Alert.alert('Success', 'Gist cloned successfully!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to clone gist. Please try again.');
+    }
+  };
+
+  const handleDeleteGist = async (gistId: string) => {
+    Alert.alert(
+      'Delete Gist',
+      'Are you sure you want to delete this gist? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              if (!token) return;
+              await deleteGist(token, gistId);
+              Alert.alert('Success', 'Gist deleted successfully!');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete gist. Please try again.');
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleRenameGist = async (gistId: string, newName: string) => {
+    try {
+      if (!token) return;
+      await renameGist(token, gistId, newName);
+      Alert.alert('Success', 'Gist renamed successfully!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to rename gist. Please try again.');
+    }
+  };
+
+  const handleOpenInBrowser = async (gistId: string) => {
+    const gist = gists.find(g => g.id === gistId);
+    if (gist?.html_url) {
+      await Linking.openURL(gist.html_url);
+    }
+  };
+
+  const showMenu = (gistId: string) => {
+    const gist = gists.find(g => g.id === gistId);
+    setSelectedGistId(gistId);
+    setMenuVisible(true);
+  };
+
+  const showRenameModal = () => {
+    setRenameModalVisible(true);
   };
 
   const renderGistSelection = () => {
@@ -113,6 +307,15 @@ export default function SettingsScreen() {
               </Text>
               <Text style={styles.gistId}>ID: {gist.id}</Text>
             </View>
+            <TouchableOpacity
+              style={styles.menuButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                showMenu(gist.id);
+              }}
+            >
+              <Ionicons name="ellipsis-vertical" size={24} color="#6c757d" />
+            </TouchableOpacity>
           </TouchableOpacity>
         ))}
         <TouchableOpacity
@@ -125,7 +328,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>GitHub Account</Text>
         {isAuthenticated ? (
@@ -181,7 +384,24 @@ export default function SettingsScreen() {
           <Text style={styles.linkText}>Learn more about now pages</Text>
         </TouchableOpacity>
       </View>
-    </View>
+
+      <GistMenu
+        gistId={selectedGistId || ''}
+        isVisible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        onOpenInBrowser={() => selectedGistId && handleOpenInBrowser(selectedGistId)}
+        onClone={() => selectedGistId && handleCloneGist(selectedGistId)}
+        onRename={() => showRenameModal()}
+        onDelete={() => selectedGistId && handleDeleteGist(selectedGistId)}
+      />
+
+      <RenameModal
+        isVisible={renameModalVisible}
+        onClose={() => setRenameModalVisible(false)}
+        onSubmit={(newName) => selectedGistId && handleRenameGist(selectedGistId, newName)}
+        currentName={gists.find(g => g.id === selectedGistId)?.description || ''}
+      />
+    </ScrollView>
   );
 }
 
@@ -189,13 +409,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
-    padding: 16,
   },
   section: {
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
-    marginBottom: 16,
+    margin: 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -275,11 +494,11 @@ const styles = StyleSheet.create({
   gistItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
+    padding: 16,
     borderWidth: 1,
     borderColor: '#e5e5e5',
     borderRadius: 8,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   selectedGist: {
     borderColor: '#007AFF',
@@ -297,5 +516,81 @@ const styles = StyleSheet.create({
   gistId: {
     fontSize: 14,
     color: '#6c757d',
+  },
+  menuButton: {
+    padding: 8,
+    marginLeft: 8,
+    marginRight: -4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 8,
+    width: '80%',
+    maxWidth: 300,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+  },
+  menuText: {
+    fontSize: 16,
+    marginLeft: 12,
+    color: '#007AFF',
+  },
+  menuSeparator: {
+    height: 1,
+    backgroundColor: '#e5e5e5',
+    marginHorizontal: 8,
+  },
+  deleteMenuItem: {
+    marginTop: 0,
+    paddingTop: 12,
+  },
+  deleteMenuText: {
+    fontSize: 16,
+    marginLeft: 12,
+    color: '#dc3545',
+  },
+  renameContainer: {
+    padding: 16,
+  },
+  renameTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 16,
+    color: '#1a1a1a',
+  },
+  renameInput: {
+    borderWidth: 1,
+    borderColor: '#e5e5e5',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 16,
+  },
+  renameButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  cancelButton: {
+    backgroundColor: '#f8f9fa',
+    marginRight: 8,
+  },
+  cancelButtonText: {
+    color: '#6c757d',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  saveButton: {
+    backgroundColor: '#007AFF',
   },
 });
