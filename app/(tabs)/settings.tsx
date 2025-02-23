@@ -84,11 +84,16 @@ interface RenameModalProps {
   onClose: () => void;
   onSubmit: (newName: string) => void;
   currentName: string;
+  gistId: string;
 }
 
-function RenameModal({ isVisible, onClose, onSubmit, currentName }: RenameModalProps) {
+function RenameModal({ isVisible, onClose, onSubmit, currentName, gistId }: RenameModalProps) {
+  console.log(currentName)
   const [newName, setNewName] = useState(currentName);
 
+  useEffect(() => {
+    setNewName(currentName)
+  }, [currentName])
   return (
     <Modal
       visible={isVisible}
@@ -141,6 +146,8 @@ export default function SettingsScreen() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [renameModalVisible, setRenameModalVisible] = useState(false);
   const [selectedGistId, setSelectedGistId] = useState<string | null>(null);
+  const [menuGistId, setMenuGistId] = useState<string | null>(null);
+  const [renamingGistId, setRenamingGistId] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -225,7 +232,7 @@ export default function SettingsScreen() {
     try {
       if (!token) return;
       await renameGist(token, gistId, newName);
-      Alert.alert('Success', 'Gist renamed successfully!');
+      // Alert.alert('Success', 'Gist renamed successfully!');
     } catch (error) {
       Alert.alert('Error', 'Failed to rename gist. Please try again.');
     }
@@ -240,11 +247,12 @@ export default function SettingsScreen() {
 
   const showMenu = (gistId: string) => {
     const gist = gists.find(g => g.id === gistId);
-    setSelectedGistId(gistId);
+    setMenuGistId(gistId);
     setMenuVisible(true);
   };
 
-  const showRenameModal = () => {
+  const showRenameModal = (gistId: string) => {
+    setRenamingGistId(gistId);
     setRenameModalVisible(true);
   };
 
@@ -328,7 +336,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>GitHub Account</Text>
         {isAuthenticated ? (
@@ -386,20 +394,27 @@ export default function SettingsScreen() {
       </View>
 
       <GistMenu
-        gistId={selectedGistId || ''}
+        gistId={menuGistId || ''}
         isVisible={menuVisible}
-        onClose={() => setMenuVisible(false)}
-        onOpenInBrowser={() => selectedGistId && handleOpenInBrowser(selectedGistId)}
-        onClone={() => selectedGistId && handleCloneGist(selectedGistId)}
-        onRename={() => showRenameModal()}
-        onDelete={() => selectedGistId && handleDeleteGist(selectedGistId)}
+        onClose={() => {
+          setMenuVisible(false);
+          setMenuGistId(null);
+        }}
+        onOpenInBrowser={() => menuGistId && handleOpenInBrowser(menuGistId)}
+        onClone={() => menuGistId && handleCloneGist(menuGistId)}
+        onRename={() => menuGistId && showRenameModal(menuGistId)}
+        onDelete={() => menuGistId && handleDeleteGist(menuGistId)}
       />
 
       <RenameModal
         isVisible={renameModalVisible}
-        onClose={() => setRenameModalVisible(false)}
-        onSubmit={(newName) => selectedGistId && handleRenameGist(selectedGistId, newName)}
-        currentName={gists.find(g => g.id === selectedGistId)?.description || ''}
+        onClose={() => {
+          setRenameModalVisible(false);
+          setRenamingGistId(null);
+        }}
+        onSubmit={(newName) => renamingGistId && handleRenameGist(renamingGistId, newName)}
+        currentName={gists.find(g => g.id === renamingGistId)?.description || ''}
+        gistId={renamingGistId || ''}
       />
     </ScrollView>
   );
@@ -409,6 +424,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
+  },
+  contentContainer: {
+    paddingBottom: 16,
   },
   section: {
     backgroundColor: '#fff',
