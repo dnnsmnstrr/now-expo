@@ -12,18 +12,40 @@ import { useNowPage } from '../hooks/useNowPage';
 import { Ionicons } from '@expo/vector-icons';
 import { NowPageData } from '../types/now-page';
 
+interface PlaylistValue {
+  name: string;
+  uri: string;
+}
+
+interface ObjectValue {
+  [key: string]: string;
+}
+
 export default function EditScreen() {
-  const { data, loading, error, updateData } = useNowPage();
-  const [localData, setLocalData] = useState<NowPageData>({});
+  const { data, updateData, refresh } = useNowPage();
   const router = useRouter();
   const navigation = useNavigation();
-  const { section } = useLocalSearchParams<{ section: string }>();
-
-  useEffect(() => {
-    if (data) {
-      setLocalData(data);
+  const { section, initialValue, isNew, fieldType, closeAfterSave } = useLocalSearchParams<{ 
+    section: string; 
+    initialValue: string;
+    isNew?: string;
+    fieldType?: string;
+    closeAfterSave?: string;
+  }>();
+  
+  // Parse the initial value based on the section type
+  const parseInitialValue = () => {
+    if (!initialValue) return '';
+    try {
+      const parsed = JSON.parse(initialValue);
+      return parsed;
+    } catch {
+      return initialValue;
     }
-  }, [data]);
+  };
+
+  const [value, setValue] = useState<any>(parseInitialValue());
+  const [objectKey, setObjectKey] = useState('');
 
   useEffect(() => {
     // Set up the header buttons
@@ -38,60 +60,63 @@ export default function EditScreen() {
           <Text style={[styles.headerButtonText, styles.headerSaveText]}>Save</Text>
         </TouchableOpacity>
       ),
-      headerTitle: section ? section.charAt(0).toUpperCase() + section.slice(1) : 'Edit',
+      headerTitle: isNew === 'true' ? 'New Field' : section ? section.charAt(0).toUpperCase() + section.slice(1) : 'Edit',
     });
-  }, [navigation, localData]);
+  }, [navigation, value]);
 
   const handleSave = async () => {
     try {
-      await updateData(localData);
-      router.back();
+      // Create a new object with all existing data plus the updated field
+      const updatedData = {
+        ...data,
+        [section]: value
+      };
+      await updateData(updatedData);
+      await refresh(); // Refresh the now page data
+      
+      if (closeAfterSave === 'true') {
+        // Replace entire stack with the root tab
+        router.replace('/(tabs)');
+      } else {
+        router.back();
+      }
     } catch (err) {
       Alert.alert('Error', 'Failed to update your now page. Please try again.');
     }
   };
 
-  const handleUpdateArrayItem = (key: string, index: number, value: string) => {
-    setLocalData(prev => ({
-      ...prev,
-      [key]: prev[key].map((item: string, i: number) => i === index ? value : item)
-    }));
+  const handleUpdateArrayItem = (index: number, newValue: string) => {
+    setValue((prev: string[]) => 
+      prev.map((item: string, i: number) => i === index ? newValue : item)
+    );
   };
 
-  const handleRemoveArrayItem = (key: string, index: number) => {
-    setLocalData(prev => ({
-      ...prev,
-      [key]: prev[key].filter((_: any, i: number) => i !== index)
-    }));
+  const handleRemoveArrayItem = (index: number) => {
+    setValue((prev: string[]) => 
+      prev.filter((_: any, i: number) => i !== index)
+    );
   };
 
-  const handleAddArrayItem = (key: string) => {
-    setLocalData(prev => ({
+  const handleAddArrayItem = () => {
+    setValue((prev: string[] | undefined) => [...(prev || []), '']);
+  };
+
+  const handleAddObjectKey = () => {
+    if (!objectKey.trim()) {
+      Alert.alert('Error', 'Please enter a key name');
+      return;
+    }
+    setValue((prev: ObjectValue) => ({
       ...prev,
-      [key]: [...(prev[key] || []), '']
+      [objectKey]: ''
     }));
+    setObjectKey('');
   };
 
   const getPlaceholder = (fieldName: string) => {
     const formatted = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
     return `What's your current ${formatted}?`;
   };
-
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <Text>Loading...</Text>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.error}>{error}</Text>
-      </View>
-    );
-  }
 
   if (!section) {
     return (
@@ -102,14 +127,95 @@ export default function EditScreen() {
   }
 
   const renderField = () => {
+    // For new fields, use the fieldType parameter
+    if (isNew === 'true' && fieldType) {
+      switch (fieldType) {
+        case 'string':
+          return (
+            <TextInput
+              style={styles.input}
+              value={value || ''}
+              onChangeText={setValue}
+              placeholder={getPlaceholder(section)}
+              autoFocus
+            />
+          );
+        
+        case 'array':
+          const items = value || [];
+          return (
+            <>
+              {items.length > 0 ? items.map((item: string, index: number) => (
+                <View key={index} style={styles.arrayItem}>
+                  <TextInput
+                    style={styles.arrayInput}
+                    value={item}
+                    onChangeText={(text) => handleUpdateArrayItem(index, text)}
+                    placeholder="Add an item"
+                    autoFocus={index === 0}
+                  />
+                  <TouchableOpacity
+                    onPress={() => handleRemoveArrayItem(index)}
+                    style={styles.removeButton}>
+                    <Ionicons name="remove-circle-outline" size={24} color="#dc3545" />
+                  </TouchableOpacity>
+                </View>
+              )) : (
+                <Text style={styles.emptyText}>No items yet. Add one below!</Text>
+              )}
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={handleAddArrayItem}>
+                <Text style={styles.addButtonText}>Add Item</Text>
+              </TouchableOpacity>
+            </>
+          );
+        
+        case 'object':
+          return (
+            <>
+              <View style={styles.objectKeyInput}>
+                <TextInput
+                  style={[styles.input, styles.keyInput]}
+                  value={objectKey}
+                  onChangeText={setObjectKey}
+                  placeholder="Enter key name"
+                  autoFocus
+                />
+                <TouchableOpacity
+                  style={[styles.addButton, styles.addKeyButton]}
+                  onPress={handleAddObjectKey}>
+                  <Text style={styles.addButtonText}>Add Key</Text>
+                </TouchableOpacity>
+              </View>
+              {Object.entries(value || {}).map(([key, val]) => (
+                <View key={key} style={styles.objectItem}>
+                  <Text style={styles.objectKey}>{key}:</Text>
+                  <TextInput
+                    style={styles.objectValue}
+                    value={String(val || '')}
+                    onChangeText={(text) => setValue((prev: ObjectValue) => ({
+                      ...prev,
+                      [key]: text
+                    }))}
+                    placeholder={`Enter value for ${key}`}
+                  />
+                </View>
+              ))}
+            </>
+          );
+      }
+    }
+
+    // For existing fields, use the previous logic
     switch (section) {
       case 'status':
       case 'location':
         return (
           <TextInput
             style={styles.input}
-            value={localData[section] || ''}
-            onChangeText={(text) => setLocalData(prev => ({ ...prev, [section]: text }))}
+            value={value || ''}
+            onChangeText={setValue}
             placeholder={getPlaceholder(section)}
             multiline={section === 'status'}
             autoFocus
@@ -121,20 +227,20 @@ export default function EditScreen() {
           <>
             <TextInput
               style={styles.input}
-              value={localData.playlist?.name || ''}
-              onChangeText={(text) => setLocalData(prev => ({
+              value={value?.name || ''}
+              onChangeText={(text) => setValue((prev: PlaylistValue) => ({
                 ...prev,
-                playlist: { ...prev.playlist, name: text }
+                name: text
               }))}
               placeholder="What are you listening to?"
               autoFocus
             />
             <TextInput
               style={styles.input}
-              value={localData.playlist?.uri || ''}
-              onChangeText={(text) => setLocalData(prev => ({
+              value={value?.uri || ''}
+              onChangeText={(text) => setValue((prev: PlaylistValue) => ({
                 ...prev,
-                playlist: { ...prev.playlist, uri: text }
+                uri: text
               }))}
               placeholder="Add the Spotify URI (optional)"
             />
@@ -144,7 +250,7 @@ export default function EditScreen() {
       case 'activities':
       case 'plans':
       case 'projects':
-        const items = localData[section] || [];
+        const items = value || [];
         return (
           <>
             {items.length > 0 ? items.map((item: string, index: number) => (
@@ -152,13 +258,13 @@ export default function EditScreen() {
                 <TextInput
                   style={styles.arrayInput}
                   value={item}
-                  onChangeText={(text) => handleUpdateArrayItem(section, index, text)}
+                  onChangeText={(text) => handleUpdateArrayItem(index, text)}
                   placeholder={`Add a ${section.slice(0, -1)}`}
                   multiline={section === 'projects'}
                   autoFocus={index === 0}
                 />
                 <TouchableOpacity
-                  onPress={() => handleRemoveArrayItem(section, index)}
+                  onPress={() => handleRemoveArrayItem(index)}
                   style={styles.removeButton}>
                   <Ionicons name="remove-circle-outline" size={24} color="#dc3545" />
                 </TouchableOpacity>
@@ -168,15 +274,15 @@ export default function EditScreen() {
             )}
             <TouchableOpacity
               style={styles.addButton}
-              onPress={() => handleAddArrayItem(section)}>
+              onPress={handleAddArrayItem}>
               <Text style={styles.addButtonText}>Add {section.slice(0, -1)}</Text>
             </TouchableOpacity>
           </>
         );
       
       default:
-        if (Array.isArray(localData[section])) {
-          const items = localData[section] || [];
+        if (Array.isArray(value)) {
+          const items = value || [];
           return (
             <>
               {items.length > 0 ? items.map((item: string, index: number) => (
@@ -184,12 +290,12 @@ export default function EditScreen() {
                   <TextInput
                     style={styles.arrayInput}
                     value={item}
-                    onChangeText={(text) => handleUpdateArrayItem(section, index, text)}
+                    onChangeText={(text) => handleUpdateArrayItem(index, text)}
                     placeholder={`Add an item`}
                     autoFocus={index === 0}
                   />
                   <TouchableOpacity
-                    onPress={() => handleRemoveArrayItem(section, index)}
+                    onPress={() => handleRemoveArrayItem(index)}
                     style={styles.removeButton}>
                     <Ionicons name="remove-circle-outline" size={24} color="#dc3545" />
                   </TouchableOpacity>
@@ -199,31 +305,49 @@ export default function EditScreen() {
               )}
               <TouchableOpacity
                 style={styles.addButton}
-                onPress={() => handleAddArrayItem(section)}>
+                onPress={handleAddArrayItem}>
                 <Text style={styles.addButtonText}>Add Item</Text>
               </TouchableOpacity>
             </>
           );
-        } else if (typeof localData[section] === 'object' && localData[section] !== null) {
-          return Object.entries(localData[section]).map(([key, value]) => (
-            <TextInput
-              key={key}
-              style={styles.input}
-              value={String(value || '')}
-              onChangeText={(text) => setLocalData(prev => ({
-                ...prev,
-                [section]: { ...prev[section], [key]: text }
-              }))}
-              placeholder={`Enter ${key}`}
-              autoFocus
-            />
-          ));
+        } else if (typeof value === 'object' && value !== null) {
+          return (
+            <>
+              <View style={styles.objectKeyInput}>
+                <TextInput
+                  style={[styles.input, styles.keyInput]}
+                  value={objectKey}
+                  onChangeText={setObjectKey}
+                  placeholder="Enter key name"
+                />
+                <TouchableOpacity
+                  style={[styles.addButton, styles.addKeyButton]}
+                  onPress={handleAddObjectKey}>
+                  <Text style={styles.addButtonText}>Add Key</Text>
+                </TouchableOpacity>
+              </View>
+              {Object.entries(value).map(([key, val]) => (
+                <View key={key} style={styles.objectItem}>
+                  <Text style={styles.objectKey}>{key}:</Text>
+                  <TextInput
+                    style={styles.objectValue}
+                    value={String(val || '')}
+                    onChangeText={(text) => setValue((prev: ObjectValue) => ({
+                      ...prev,
+                      [key]: text
+                    }))}
+                    placeholder={`Enter value for ${key}`}
+                  />
+                </View>
+              ))}
+            </>
+          );
         } else {
           return (
             <TextInput
               style={styles.input}
-              value={String(localData[section] || '')}
-              onChangeText={(text) => setLocalData(prev => ({ ...prev, [section]: text }))}
+              value={String(value || '')}
+              onChangeText={setValue}
               placeholder={getPlaceholder(section)}
               autoFocus
             />
@@ -322,6 +446,36 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#6c757d',
     marginBottom: 16,
+    fontSize: 16,
+  },
+  objectKeyInput: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  keyInput: {
+    flex: 1,
+    marginBottom: 0,
+    marginRight: 8,
+  },
+  addKeyButton: {
+    marginTop: 0,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  objectItem: {
+    marginBottom: 12,
+  },
+  objectKey: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6c757d',
+    marginBottom: 4,
+  },
+  objectValue: {
+    borderWidth: 1,
+    borderColor: '#e5e5e5',
+    borderRadius: 8,
+    padding: 12,
     fontSize: 16,
   },
 }); 

@@ -29,6 +29,18 @@ export default function RootLayout() {
             headerShadowVisible: false,
           }} 
         />
+        <Stack.Screen 
+          name="new-field" 
+          options={{
+            presentation: 'modal',
+            headerShown: true,
+            headerTitle: 'Add New Field',
+            headerStyle: {
+              backgroundColor: '#fff',
+            },
+            headerShadowVisible: false,
+          }} 
+        />
       </Stack>
       <StatusBar style="auto" />
     </>

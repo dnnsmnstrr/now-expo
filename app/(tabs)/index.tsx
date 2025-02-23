@@ -10,10 +10,19 @@ export default function NowScreen() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
 
-  const navigateToEdit = (section?: string) => {
+  const navigateToEdit = (section: string, value: any) => {
     router.push({
       pathname: '/edit',
-      params: { section }
+      params: { 
+        section,
+        initialValue: typeof value === 'object' ? JSON.stringify(value) : String(value || '')
+      }
+    });
+  };
+
+  const addNewField = () => {
+    router.push({
+      pathname: '/new-field',
     });
   };
 
@@ -53,7 +62,7 @@ export default function NowScreen() {
     >
       <View style={styles.content}>
         {data?.status && (
-          <TouchableOpacity onPress={() => navigateToEdit('status')} style={styles.section}>
+          <TouchableOpacity onPress={() => navigateToEdit('status', data.status)} style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="information-circle-outline" size={24} color="#007AFF" />
               <Text style={styles.sectionTitle}>Status</Text>
@@ -63,7 +72,7 @@ export default function NowScreen() {
         )}
 
         {data?.location && (
-          <TouchableOpacity onPress={() => navigateToEdit('location')} style={styles.section}>
+          <TouchableOpacity onPress={() => navigateToEdit('location', data.location)} style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="location-outline" size={24} color="#007AFF" />
               <Text style={styles.sectionTitle}>Location</Text>
@@ -73,7 +82,7 @@ export default function NowScreen() {
         )}
 
         {data?.playlist && (
-          <TouchableOpacity onPress={() => navigateToEdit('playlist')} style={styles.section}>
+          <TouchableOpacity onPress={() => navigateToEdit('playlist', data.playlist)} style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="musical-notes-outline" size={24} color="#007AFF" />
               <Text style={styles.sectionTitle}>Current Playlist</Text>
@@ -83,7 +92,7 @@ export default function NowScreen() {
         )}
 
         {data?.activities && data.activities.length > 0 && (
-          <TouchableOpacity onPress={() => navigateToEdit('activities')} style={styles.section}>
+          <TouchableOpacity onPress={() => navigateToEdit('activities', data.activities)} style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="checkmark-circle-outline" size={24} color="#007AFF" />
               <Text style={styles.sectionTitle}>Recent Activities</Text>
@@ -95,7 +104,7 @@ export default function NowScreen() {
         )}
 
         {data?.plans && data.plans.length > 0 && (
-          <TouchableOpacity onPress={() => navigateToEdit('plans')} style={styles.section}>
+          <TouchableOpacity onPress={() => navigateToEdit('plans', data.plans)} style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="calendar-outline" size={24} color="#007AFF" />
               <Text style={styles.sectionTitle}>Upcoming Plans</Text>
@@ -107,7 +116,7 @@ export default function NowScreen() {
         )}
 
         {data?.projects && data.projects.length > 0 && (
-          <TouchableOpacity onPress={() => navigateToEdit('projects')} style={styles.section}>
+          <TouchableOpacity onPress={() => navigateToEdit('projects', data.projects)} style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="construct-outline" size={24} color="#007AFF" />
               <Text style={styles.sectionTitle}>Projects</Text>
@@ -128,7 +137,7 @@ export default function NowScreen() {
               .join(' ');
 
             return (
-              <TouchableOpacity key={key} onPress={() => navigateToEdit(key)} style={styles.section}>
+              <TouchableOpacity key={key} onPress={() => navigateToEdit(key, value)} style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <Ionicons name="add-circle-outline" size={24} color="#007AFF" />
                   <Text style={styles.sectionTitle}>{capitalizedKey}</Text>
@@ -149,6 +158,13 @@ export default function NowScreen() {
           }
           return null;
         })}
+
+        <TouchableOpacity onPress={addNewField} style={styles.addButton}>
+          <View style={styles.addButtonContent}>
+            <Ionicons name="add-circle-outline" size={20} color="#007AFF" />
+            <Text style={styles.addButtonText}>Add New Field</Text>
+          </View>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -202,5 +218,24 @@ const styles = StyleSheet.create({
     color: '#dc3545',
     textAlign: 'center',
     marginTop: 20,
+  },
+  addButton: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#e1e1e1',
+  },
+  addButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginLeft: 8,
+    color: '#007AFF',
   },
 });
