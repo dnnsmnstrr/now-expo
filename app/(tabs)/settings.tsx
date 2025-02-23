@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking, TextInput, ActivityIndicator } from 'react-native';
 import { useAuth } from '../../hooks/useAuth';
-import { useGistSelection } from '../../hooks/useGistSelection';
+import { useNowPage } from '../../hooks/useNowPage';
+import { useGistContext } from '../../hooks/GistContext';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 export default function SettingsScreen() {
   const { isAuthenticated, login, logout, user, token } = useAuth();
-  const { selectedGistId, gists, loading, error, fetchGists, createGist, selectGist } = useGistSelection();
+  const { currentGistId, gists, loading, error, fetchGists, createGist, selectGist } = useGistContext();
   const [authToken, setAuthToken] = useState('');
+  const router = useRouter();
 
   useEffect(() => {
     if (isAuthenticated && token) {
@@ -36,8 +39,18 @@ export default function SettingsScreen() {
     try {
       if (!token) return;
       await createGist(token);
+      router.replace('/(tabs)');
     } catch (error) {
       Alert.alert('Error', 'Failed to create gist. Please try again.');
+    }
+  };
+
+  const handleSelectGist = async (gistId: string) => {
+    try {
+      await selectGist(gistId);
+      // router.replace('/(tabs)');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to select gist. Please try again.');
     }
   };
 
@@ -86,11 +99,11 @@ export default function SettingsScreen() {
             key={gist.id}
             style={[
               styles.gistItem,
-              selectedGistId === gist.id && styles.selectedGist,
+              currentGistId === gist.id && styles.selectedGist,
             ]}
-            onPress={() => selectGist(gist.id)}>
+            onPress={() => handleSelectGist(gist.id)}>
             <Ionicons
-              name={selectedGistId === gist.id ? 'radio-button-on' : 'radio-button-off'}
+              name={currentGistId === gist.id ? 'radio-button-on' : 'radio-button-off'}
               size={24}
               color="#007AFF"
             />

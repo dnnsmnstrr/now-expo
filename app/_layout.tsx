@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { GistProvider } from '../hooks/GistContext';
 
 declare global {
   interface Window {
@@ -14,7 +15,7 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <>
+    <GistProvider>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen 
@@ -43,6 +44,6 @@ export default function RootLayout() {
         />
       </Stack>
       <StatusBar style="auto" />
-    </>
+    </GistProvider>
   );
 }

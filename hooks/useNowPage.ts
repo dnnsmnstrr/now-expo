@@ -1,12 +1,23 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
-import { useGistSelection } from './useGistSelection';
+import { useGistContext } from './GistContext';
 import { NowPageData } from '../types/now-page';
 import { Octokit } from 'octokit';
 
+interface GistResponse {
+  data: {
+    files: {
+      [key: string]: {
+        filename: string;
+        content: string;
+      } | null;
+    };
+  };
+}
+
 export function useNowPage() {
   const { token } = useAuth();
-  const { selectedGistId } = useGistSelection();
+  const { currentGistId } = useGistContext();
   const [data, setData] = useState<NowPageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -15,14 +26,8 @@ export function useNowPage() {
     auth: token,
   });
 
-  useEffect(() => {
-    if (token && selectedGistId) {
-      fetchData();
-    }
-  }, [token, selectedGistId]);
-
   const fetchData = async () => {
-    if (!selectedGistId) {
+    if (!currentGistId) {
       setError('No Gist selected');
       setLoading(false);
       return;
@@ -33,12 +38,12 @@ export function useNowPage() {
       setError(null);
 
       const response = await octokit.request('GET /gists/{gist_id}', {
-        gist_id: selectedGistId,
-      });
+        gist_id: currentGistId,
+      }) as GistResponse;
 
-      const content = response.data.files['now.json']?.content;
-      if (content) {
-        setData(JSON.parse(content));
+      const nowFile = response.data.files['now.json'];
+      if (nowFile && nowFile.content) {
+        setData(JSON.parse(nowFile.content));
       } else {
         setError('now.json not found in the selected Gist');
       }
@@ -50,8 +55,18 @@ export function useNowPage() {
     }
   };
 
+  // Fetch data when the component mounts or when currentGistId/token changes
+  useEffect(() => {
+    if (token && currentGistId) {
+      fetchData();
+    } else {
+      // Reset data if no gist is selected or no token is available
+      setData(null);
+    }
+  }, [token, currentGistId]);
+
   const updateData = async (newData: NowPageData) => {
-    if (!selectedGistId) {
+    if (!currentGistId) {
       throw new Error('No Gist selected');
     }
 
@@ -60,7 +75,7 @@ export function useNowPage() {
       setError(null);
 
       await octokit.request('PATCH /gists/{gist_id}', {
-        gist_id: selectedGistId,
+        gist_id: currentGistId,
         files: {
           'now.json': {
             content: JSON.stringify(newData, null, 2),
