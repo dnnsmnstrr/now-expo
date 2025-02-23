@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Octokit } from 'octokit';
 import { useAuth } from './useAuth';
 import { useGistContext } from './GistContext';
 import { NowPageData } from '../types/now-page';
-import { Octokit } from 'octokit';
 
 interface GistResponse {
   data: {
@@ -15,7 +15,23 @@ interface GistResponse {
   };
 }
 
-export function useNowPage() {
+interface NowContextType {
+  data: NowPageData | null;
+  loading: boolean;
+  error: string | null;
+  updateData: (newData: NowPageData) => Promise<void>;
+  refresh: () => Promise<void>;
+}
+
+const NowContext = createContext<NowContextType>({
+  data: null,
+  loading: false,
+  error: null,
+  updateData: async () => {},
+  refresh: async () => {},
+});
+
+export function NowProvider({ children }: { children: React.ReactNode }) {
   const { token } = useAuth();
   const { currentGistId } = useGistContext();
   const [data, setData] = useState<NowPageData | null>(null);
@@ -42,6 +58,7 @@ export function useNowPage() {
       }) as GistResponse;
 
       const nowFile = response.data.files['now.json'];
+      console.log(nowFile)
       if (nowFile && nowFile.content) {
         setData(JSON.parse(nowFile.content));
       } else {
@@ -93,11 +110,21 @@ export function useNowPage() {
     }
   };
 
-  return {
-    data,
-    loading,
-    error,
-    updateData,
-    refresh: fetchData,
-  };
+  return (
+    <NowContext.Provider 
+      value={{ 
+        data, 
+        loading, 
+        error, 
+        updateData,
+        refresh: fetchData,
+      }}
+    >
+      {children}
+    </NowContext.Provider>
+  );
 }
+
+export function useNowPage() {
+  return useContext(NowContext);
+} 

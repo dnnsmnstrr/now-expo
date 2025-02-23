@@ -8,7 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
-import { useNowPage } from '../hooks/useNowPage';
+import { useNowPage } from '../hooks/NowContext';
 import { Ionicons } from '@expo/vector-icons';
 import { NowPageData } from '../types/now-page';
 

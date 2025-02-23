@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { useNowPage } from '../../hooks/useNowPage';
+import { useNowPage } from '../../hooks/NowContext';
 import { useGistContext } from '../../hooks/GistContext';
 import { NowPageData } from '../../types/now-page';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,13 +11,6 @@ export default function NowScreen() {
   const { currentGistId } = useGistContext();
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
-
-  // Listen for gist changes
-  useEffect(() => {
-    if (currentGistId) {
-      refresh();
-    }
-  }, [currentGistId]);
 
   const navigateToEdit = (section: string, value: any) => {
     router.push({

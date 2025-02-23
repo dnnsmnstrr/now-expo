@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking, TextInput, ActivityIndicator, Modal, ScrollView } from 'react-native';
 import { useAuth } from '../../hooks/useAuth';
-import { useNowPage } from '../../hooks/useNowPage';
+import { useNowPage } from '../../hooks/NowContext';
 import { useGistContext } from '../../hooks/GistContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -145,7 +145,6 @@ export default function SettingsScreen() {
   const [authToken, setAuthToken] = useState('');
   const [menuVisible, setMenuVisible] = useState(false);
   const [renameModalVisible, setRenameModalVisible] = useState(false);
-  const [selectedGistId, setSelectedGistId] = useState<string | null>(null);
   const [menuGistId, setMenuGistId] = useState<string | null>(null);
   const [renamingGistId, setRenamingGistId] = useState<string | null>(null);
   const router = useRouter();
