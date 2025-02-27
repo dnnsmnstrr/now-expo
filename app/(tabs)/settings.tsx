@@ -11,9 +11,9 @@ import {
   Modal,
   ScrollView,
 } from 'react-native';
-import { useAuth } from '../../hooks/useAuth';
-import { useNowPage } from '../../hooks/NowContext';
+import * as Clipboard from 'expo-clipboard';
 import { useGistContext } from '../../hooks/GistContext';
+import { useAuth } from '../../hooks/useAuth';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
@@ -62,13 +62,14 @@ function GistMenu({
           <View style={styles.menuSeparator} />
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => {
-              onClone();
+            onPress={async () => {
+              await Clipboard.setStringAsync(gistId);
+              Alert.alert('Copied', 'Gist ID copied to clipboard!');
               onClose();
             }}
           >
             <Ionicons name="copy-outline" size={24} color="#007AFF" />
-            <Text style={styles.menuText}>Clone Gist</Text>
+            <Text style={styles.menuText}>Copy Gist ID</Text>
           </TouchableOpacity>
           <View style={styles.menuSeparator} />
           <TouchableOpacity
@@ -80,6 +81,17 @@ function GistMenu({
           >
             <Ionicons name="pencil-outline" size={24} color="#007AFF" />
             <Text style={styles.menuText}>Rename Gist</Text>
+          </TouchableOpacity>
+          <View style={styles.menuSeparator} />
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => {
+              onClone();
+              onClose();
+            }}
+          >
+            <Ionicons name="copy" size={24} color="#007AFF" />
+            <Text style={styles.menuText}>Clone Gist</Text>
           </TouchableOpacity>
           <View style={styles.menuSeparator} />
           <TouchableOpacity
