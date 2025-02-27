@@ -32,7 +32,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     package: 'com.yourcompany.nowpage'
   },
   web: {
-    favicon: './assets/favicon.png'
+    favicon: './assets/favicon.png',
+    output: 'server'
   },
   plugins: [
     'expo-router'
