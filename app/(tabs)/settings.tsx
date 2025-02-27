@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking, TextInput, ActivityIndicator, Modal, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  Linking,
+  TextInput,
+  ActivityIndicator,
+  Modal,
+  ScrollView,
+} from 'react-native';
 import { useAuth } from '../../hooks/useAuth';
 import { useNowPage } from '../../hooks/NowContext';
 import { useGistContext } from '../../hooks/GistContext';
@@ -16,7 +27,15 @@ interface GistMenuProps {
   onOpenInBrowser: () => void;
 }
 
-function GistMenu({ gistId, isVisible, onClose, onClone, onRename, onDelete, onOpenInBrowser }: GistMenuProps) {
+function GistMenu({
+  gistId,
+  isVisible,
+  onClose,
+  onClone,
+  onRename,
+  onDelete,
+  onOpenInBrowser,
+}: GistMenuProps) {
   return (
     <Modal
       visible={isVisible}
@@ -24,13 +43,13 @@ function GistMenu({ gistId, isVisible, onClose, onClone, onRename, onDelete, onO
       animationType="fade"
       onRequestClose={onClose}
     >
-      <TouchableOpacity 
-        style={styles.modalOverlay} 
-        activeOpacity={1} 
+      <TouchableOpacity
+        style={styles.modalOverlay}
+        activeOpacity={1}
         onPress={onClose}
       >
         <View style={styles.menuContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.menuItem}
             onPress={() => {
               onOpenInBrowser();
@@ -41,7 +60,7 @@ function GistMenu({ gistId, isVisible, onClose, onClone, onRename, onDelete, onO
             <Text style={styles.menuText}>Open in Browser</Text>
           </TouchableOpacity>
           <View style={styles.menuSeparator} />
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.menuItem}
             onPress={() => {
               onClone();
@@ -52,7 +71,7 @@ function GistMenu({ gistId, isVisible, onClose, onClone, onRename, onDelete, onO
             <Text style={styles.menuText}>Clone Gist</Text>
           </TouchableOpacity>
           <View style={styles.menuSeparator} />
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.menuItem}
             onPress={() => {
               onRename();
@@ -63,7 +82,7 @@ function GistMenu({ gistId, isVisible, onClose, onClone, onRename, onDelete, onO
             <Text style={styles.menuText}>Rename Gist</Text>
           </TouchableOpacity>
           <View style={styles.menuSeparator} />
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.menuItem, styles.deleteMenuItem]}
             onPress={() => {
               onDelete();
@@ -87,13 +106,19 @@ interface RenameModalProps {
   gistId: string;
 }
 
-function RenameModal({ isVisible, onClose, onSubmit, currentName, gistId }: RenameModalProps) {
-  console.log(currentName)
+function RenameModal({
+  isVisible,
+  onClose,
+  onSubmit,
+  currentName,
+  gistId,
+}: RenameModalProps) {
+  console.log(currentName);
   const [newName, setNewName] = useState(currentName);
 
   useEffect(() => {
-    setNewName(currentName)
-  }, [currentName])
+    setNewName(currentName);
+  }, [currentName]);
   return (
     <Modal
       visible={isVisible}
@@ -101,9 +126,9 @@ function RenameModal({ isVisible, onClose, onSubmit, currentName, gistId }: Rena
       animationType="fade"
       onRequestClose={onClose}
     >
-      <TouchableOpacity 
-        style={styles.modalOverlay} 
-        activeOpacity={1} 
+      <TouchableOpacity
+        style={styles.modalOverlay}
+        activeOpacity={1}
         onPress={onClose}
       >
         <View style={[styles.menuContainer, styles.renameContainer]}>
@@ -141,7 +166,18 @@ function RenameModal({ isVisible, onClose, onSubmit, currentName, gistId }: Rena
 
 export default function SettingsScreen() {
   const { isAuthenticated, login, logout, user, token } = useAuth();
-  const { currentGistId, gists, loading, error, fetchGists, createGist, selectGist, cloneGist, deleteGist, renameGist } = useGistContext();
+  const {
+    currentGistId,
+    gists,
+    loading,
+    error,
+    fetchGists,
+    createGist,
+    selectGist,
+    cloneGist,
+    deleteGist,
+    renameGist,
+  } = useGistContext();
   const [authToken, setAuthToken] = useState('');
   const [menuVisible, setMenuVisible] = useState(false);
   const [renameModalVisible, setRenameModalVisible] = useState(false);
@@ -160,7 +196,10 @@ export default function SettingsScreen() {
       await login(authToken);
       setAuthToken('');
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to login. Please try again.');
+      Alert.alert(
+        'Error',
+        error.message || 'Failed to login. Please try again.'
+      );
     }
   };
 
@@ -223,7 +262,7 @@ export default function SettingsScreen() {
             }
           },
         },
-      ],
+      ]
     );
   };
 
@@ -238,14 +277,14 @@ export default function SettingsScreen() {
   };
 
   const handleOpenInBrowser = async (gistId: string) => {
-    const gist = gists.find(g => g.id === gistId);
+    const gist = gists.find((g) => g.id === gistId);
     if (gist?.html_url) {
       await Linking.openURL(gist.html_url);
     }
   };
 
   const showMenu = (gistId: string) => {
-    const gist = gists.find(g => g.id === gistId);
+    const gist = gists.find((g) => g.id === gistId);
     setMenuGistId(gistId);
     setMenuVisible(true);
   };
@@ -270,7 +309,8 @@ export default function SettingsScreen() {
           <Text style={styles.error}>{error}</Text>
           <TouchableOpacity
             style={[styles.button, styles.retryButton]}
-            onPress={() => token && fetchGists(token)}>
+            onPress={() => token && fetchGists(token)}
+          >
             <Text style={styles.buttonText}>Retry</Text>
           </TouchableOpacity>
         </View>
@@ -281,11 +321,13 @@ export default function SettingsScreen() {
       return (
         <View style={styles.section}>
           <Text style={styles.description}>
-            No now.json gist found. Create one to get started with your now page.
+            No now.json gist found. Create one to get started with your now
+            page.
           </Text>
           <TouchableOpacity
             style={[styles.button, styles.createButton]}
-            onPress={handleCreateGist}>
+            onPress={handleCreateGist}
+          >
             <Text style={styles.buttonText}>Create Now Page Gist</Text>
           </TouchableOpacity>
         </View>
@@ -295,16 +337,21 @@ export default function SettingsScreen() {
     return (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Select Now Page Gist</Text>
-        {gists.map(gist => (
+        {gists.map((gist) => (
           <TouchableOpacity
             key={gist.id}
             style={[
               styles.gistItem,
               currentGistId === gist.id && styles.selectedGist,
             ]}
-            onPress={() => handleSelectGist(gist.id)}>
+            onPress={() => handleSelectGist(gist.id)}
+          >
             <Ionicons
-              name={currentGistId === gist.id ? 'radio-button-on' : 'radio-button-off'}
+              name={
+                currentGistId === gist.id
+                  ? 'radio-button-on'
+                  : 'radio-button-off'
+              }
               size={24}
               color="#007AFF"
             />
@@ -327,7 +374,8 @@ export default function SettingsScreen() {
         ))}
         <TouchableOpacity
           style={[styles.button, styles.createButton]}
-          onPress={handleCreateGist}>
+          onPress={handleCreateGist}
+        >
           <Text style={styles.buttonText}>Create Another Gist</Text>
         </TouchableOpacity>
       </View>
@@ -335,7 +383,10 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+    >
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>GitHub Account</Text>
         {isAuthenticated ? (
@@ -343,7 +394,8 @@ export default function SettingsScreen() {
             <Text style={styles.userInfo}>Logged in as: {user?.login}</Text>
             <TouchableOpacity
               style={[styles.button, styles.logoutButton]}
-              onPress={handleLogout}>
+              onPress={handleLogout}
+            >
               <Text style={styles.buttonText}>Logout</Text>
             </TouchableOpacity>
           </>
@@ -354,8 +406,11 @@ export default function SettingsScreen() {
               The token needs 'gist' scope to read and write your now page data.
             </Text>
             <TouchableOpacity
-              onPress={() => Linking.openURL('https://github.com/settings/tokens/new')}
-              style={styles.link}>
+              onPress={() =>
+                Linking.openURL('https://github.com/settings/tokens/new')
+              }
+              style={styles.link}
+            >
               <Text style={styles.linkText}>Create a new token</Text>
             </TouchableOpacity>
             <TextInput
@@ -369,7 +424,8 @@ export default function SettingsScreen() {
             />
             <TouchableOpacity
               style={[styles.button, styles.loginButton]}
-              onPress={handleLogin}>
+              onPress={handleLogin}
+            >
               <Text style={styles.buttonText}>Login with Token</Text>
             </TouchableOpacity>
           </View>
@@ -381,13 +437,15 @@ export default function SettingsScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About</Text>
         <Text style={styles.description}>
-          This app helps you maintain a "now page" - a place to share what you're currently focused on,
-          your recent activities, and upcoming plans. The data is stored in a GitHub Gist, making it
-          easy to integrate with other platforms.
+          This app helps you maintain a "now page" - a place to share what
+          you're currently focused on, your recent activities, and upcoming
+          plans. The data is stored in a GitHub Gist, making it easy to
+          integrate with other platforms.
         </Text>
         <TouchableOpacity
           onPress={() => Linking.openURL('https://nownownow.com/about')}
-          style={styles.link}>
+          style={styles.link}
+        >
           <Text style={styles.linkText}>Learn more about now pages</Text>
         </TouchableOpacity>
       </View>
@@ -411,8 +469,12 @@ export default function SettingsScreen() {
           setRenameModalVisible(false);
           setRenamingGistId(null);
         }}
-        onSubmit={(newName) => renamingGistId && handleRenameGist(renamingGistId, newName)}
-        currentName={gists.find(g => g.id === renamingGistId)?.description || ''}
+        onSubmit={(newName) =>
+          renamingGistId && handleRenameGist(renamingGistId, newName)
+        }
+        currentName={
+          gists.find((g) => g.id === renamingGistId)?.description || ''
+        }
         gistId={renamingGistId || ''}
       />
     </ScrollView>

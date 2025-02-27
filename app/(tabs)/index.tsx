@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator, Button } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useNowPage } from '../../hooks/NowContext';
@@ -34,6 +34,15 @@ export default function NowScreen() {
     setRefreshing(false);
   };
 
+  if (!currentGistId) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.error}>No ID selected. Please go to settings to select an ID.</Text>
+        <Button title="Go to Settings" onPress={() => router.push('/settings')} />
+      </View>
+    );
+  }
+  
   if (loading && !refreshing) {
     return (
       <View style={styles.container}>
@@ -220,6 +229,7 @@ const styles = StyleSheet.create({
     color: '#dc3545',
     textAlign: 'center',
     marginTop: 20,
+    marginBottom: 20,
   },
   addButton: {
     backgroundColor: '#fff',

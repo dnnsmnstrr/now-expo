@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useNowPage } from '../hooks/NowContext';
@@ -33,6 +34,10 @@ export default function EditScreen() {
     closeAfterSave?: string;
   }>();
   
+  // Add loading states
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Parse the initial value based on the section type
   const parseInitialValue = () => {
     if (!initialValue) return '';
@@ -61,14 +66,16 @@ export default function EditScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
+              setIsDeleting(true);
               // Create a new object without the deleted field
               const { [section]: deletedField, ...remainingData } = data || {};
-              console.log(remainingData)
               await updateData(remainingData as NowPageData);
               await refresh(); // Refresh the now page data
               router.back();
             } catch (err) {
               Alert.alert('Error', 'Failed to delete the field. Please try again.');
+            } finally {
+              setIsDeleting(false);
             }
           }
         }
@@ -87,21 +94,38 @@ export default function EditScreen() {
       headerRight: () => (
         <View style={styles.headerButtons}>
           {isNew !== 'true' && (
-            <TouchableOpacity onPress={handleDelete} style={[styles.headerButton, styles.deleteButton]}>
-              <Ionicons name="trash-outline" size={24} color="#dc3545" />
+            <TouchableOpacity 
+              onPress={handleDelete} 
+              style={[styles.headerButton, styles.deleteButton]}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <ActivityIndicator size="small" color="#dc3545" />
+              ) : (
+                <Ionicons name="trash-outline" size={24} color="#dc3545" />
+              )}
             </TouchableOpacity>
           )}
-          <TouchableOpacity onPress={handleSave} style={styles.headerButton}>
-            <Text style={[styles.headerButtonText, styles.headerSaveText]}>Save</Text>
+          <TouchableOpacity 
+            onPress={handleSave} 
+            style={styles.headerButton}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <ActivityIndicator size="small" color="#007AFF" />
+            ) : (
+              <Text style={[styles.headerButtonText, styles.headerSaveText]}>Save</Text>
+            )}
           </TouchableOpacity>
         </View>
       ),
       headerTitle: isNew === 'true' ? 'New Field' : section ? section.charAt(0).toUpperCase() + section.slice(1) : 'Edit',
     });
-  }, [navigation, value]);
+  }, [navigation, value, isSaving, isDeleting]);
 
   const handleSave = async () => {
     try {
+      setIsSaving(true);
       // Create a new object with all existing data plus the updated field
       const updatedData = {
         ...data,
@@ -118,6 +142,8 @@ export default function EditScreen() {
       }
     } catch (err) {
       Alert.alert('Error', 'Failed to update your now page. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -311,7 +337,7 @@ export default function EditScreen() {
             <TouchableOpacity
               style={styles.addButton}
               onPress={handleAddArrayItem}>
-              <Text style={styles.addButtonText}>Add {section.slice(0, -1)}</Text>
+              <Text style={styles.addButtonText}>Add Item</Text>
             </TouchableOpacity>
           </>
         );
