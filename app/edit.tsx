@@ -38,6 +38,9 @@ export default function EditScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Add state to track the index of the newly added item
+  const [newItemIndex, setNewItemIndex] = useState<number | null>(null);
+
   // Parse the initial value based on the section type
   const parseInitialValue = () => {
     if (!initialValue) return '';
@@ -123,19 +126,48 @@ export default function EditScreen() {
     });
   }, [navigation, value, isSaving, isDeleting]);
 
+  useEffect(() => {
+    if (newItemIndex !== null) {
+      // Clear the newItemIndex after a short delay to allow the input to render
+      setTimeout(() => setNewItemIndex(null), 100);
+    }
+  }, [newItemIndex]);
+
   const handleSave = async () => {
+    // Clean up the value before saving
+    let cleanedValue = value;
+    if (Array.isArray(value)) {
+      // For arrays, filter out empty strings
+      cleanedValue = value.filter(item => item.trim() !== '');
+      if (cleanedValue.length === 0) {
+        // Don't save if there are no non-empty items
+        router.back();
+        return;
+      }
+    } else if (typeof value === 'object' && value !== null) {
+      if (value.hasOwnProperty('name') && value.hasOwnProperty('uri')) {
+        // Special case for playlist - require name
+        if (!value.name.trim()) {
+          router.back();
+          return;
+        }
+      }
+    } else if (!String(value).trim()) {
+      // Don't save empty string values
+      router.back();
+      return;
+    }
+
     try {
       setIsSaving(true);
-      // Create a new object with all existing data plus the updated field
       const updatedData = {
         ...data,
-        [section]: value
+        [section]: cleanedValue
       };
       await updateData(updatedData);
-      await refresh(); // Refresh the now page data
+      await refresh();
       
       if (closeAfterSave === 'true') {
-        // Replace entire stack with the root tab
         router.replace('/(tabs)');
       } else {
         router.back();
@@ -160,7 +192,12 @@ export default function EditScreen() {
   };
 
   const handleAddArrayItem = () => {
-    setValue((prev: string[] | undefined) => [...(prev || []), '']);
+    setValue((prev: string[] | undefined) => {
+      const newArray = [...(prev || []), ''];
+      // Set the index of the newly added item
+      setNewItemIndex(newArray.length - 1);
+      return newArray;
+    });
   };
 
   const handleAddObjectKey = () => {
@@ -214,7 +251,7 @@ export default function EditScreen() {
                     value={item}
                     onChangeText={(text) => handleUpdateArrayItem(index, text)}
                     placeholder="Add an item"
-                    autoFocus={index === 0}
+                    autoFocus={newItemIndex === index}
                   />
                   <TouchableOpacity
                     onPress={() => handleRemoveArrayItem(index)}
@@ -323,7 +360,7 @@ export default function EditScreen() {
                   onChangeText={(text) => handleUpdateArrayItem(index, text)}
                   placeholder={`Add a ${section.slice(0, -1)}`}
                   multiline={section === 'projects'}
-                  autoFocus={index === 0}
+                  autoFocus={newItemIndex === index}
                 />
                 <TouchableOpacity
                   onPress={() => handleRemoveArrayItem(index)}
@@ -354,7 +391,7 @@ export default function EditScreen() {
                     value={item}
                     onChangeText={(text) => handleUpdateArrayItem(index, text)}
                     placeholder={`Add an item`}
-                    autoFocus={index === 0}
+                    autoFocus={newItemIndex === index}
                   />
                   <TouchableOpacity
                     onPress={() => handleRemoveArrayItem(index)}
