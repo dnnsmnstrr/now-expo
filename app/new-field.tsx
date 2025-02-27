@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, TouchableWithoutFeedback, Keyboard, Platform } from 'react-native';
 import { useState, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -63,8 +63,10 @@ export default function NewFieldScreen() {
 
   return (
     <TouchableWithoutFeedback onPress={() => {
-      Keyboard.dismiss();
-      inputRef.current?.blur();
+      if (Platform.OS !== 'web') {
+        Keyboard.dismiss();
+        inputRef.current?.blur();
+      }
     }}>
       <View style={styles.container}>
         <Text style={styles.title}>Add New Field</Text>

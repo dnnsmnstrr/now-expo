@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useNowPage } from '../../hooks/NowContext';
 import { useGistContext } from '../../hooks/GistContext';
-import { NowPageData } from '../../types/now-page';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function NowScreen() {
