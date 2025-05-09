@@ -565,10 +565,40 @@ export default function EditScreen() {
                     const match = text.match(/spotify:playlist:([a-zA-Z0-9]+)|open\.spotify\.com\/playlist\/([a-zA-Z0-9]+)/);
                     if (match) {
                       const playlistId = match[1] || match[2];
-                      setValue((prev: PlaylistValue) => ({
-                        ...prev,
-                        uri: playlistId,
-                      }));
+                      try {
+                        // Fetch playlist details from Spotify's embed API
+                        const response = await fetch(`https://open.spotify.com/embed/playlist/${playlistId}`);
+                        const html = await response.text();
+                        // Extract the playlist name from the embed data
+                        const nameMatch = html.match(/"namec":"(.*?)"/);
+                        if (nameMatch) {
+                          // Remove "Spotify - " prefix and " - playlist by" suffix
+                          const playlistName = nameMatch[1]
+                            .replace('Spotify - ', '')
+                            .replace(/ - playlist by.*$/, '')
+                            .trim();
+                            
+                          setValue((prev: PlaylistValue) => ({
+                            ...prev,
+                            name: playlistName,
+                            uri: playlistId,
+                          }));
+                        } else {
+                          // If we can't find the name, just set the URI
+                          setValue((prev: PlaylistValue) => ({
+                            ...prev,
+                            uri: playlistId,
+                          }));
+                          // Alert.alert('Note', 'Could not fetch playlist name. Please enter it manually.');
+                        }
+                      } catch (error) {
+                        // If fetching fails, just set the URI
+                        setValue((prev: PlaylistValue) => ({
+                          ...prev,
+                          uri: playlistId,
+                        }));
+                        Alert.alert('Note', 'Could not fetch playlist name. Please enter it manually.');
+                      }
                     } else {
                       Alert.alert('Error', 'No valid Spotify playlist URL found in clipboard');
                     }
