@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  PanResponder,
 } from 'react-native';
 import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useNowPage } from '../hooks/NowContext';
@@ -27,6 +28,83 @@ interface PlaylistValue {
 interface ObjectValue {
   [key: string]: string;
 }
+
+const DraggableItem = ({ 
+  item, 
+  index, 
+  onUpdate, 
+  onRemove,
+  onMoveUp,
+  onMoveDown,
+  placeholder,
+  multiline = false,
+  autoFocus = false,
+  isFirst,
+  isLast,
+  isReordering,
+}: { 
+  item: string;
+  index: number;
+  onUpdate: (index: number, value: string) => void;
+  onRemove: (index: number) => void;
+  onMoveUp: (index: number) => void;
+  onMoveDown: (index: number) => void;
+  placeholder: string;
+  multiline?: boolean;
+  autoFocus?: boolean;
+  isFirst: boolean;
+  isLast: boolean;
+  isReordering: boolean;
+}) => {
+  return (
+    <View style={styles.arrayItem}>
+      {isReordering && (
+        <View style={styles.reorderButtons}>
+          <TouchableOpacity
+            onPress={() => onMoveUp(index)}
+            disabled={isFirst}
+            style={[styles.reorderButton, isFirst && styles.disabledButton]}
+          >
+            <Ionicons 
+              name="chevron-up" 
+              size={20} 
+              color={isFirst ? "#ccc" : "#6c757d"} 
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => onMoveDown(index)}
+            disabled={isLast}
+            style={[styles.reorderButton, isLast && styles.disabledButton]}
+          >
+            <Ionicons 
+              name="chevron-down" 
+              size={20} 
+              color={isLast ? "#ccc" : "#6c757d"} 
+            />
+          </TouchableOpacity>
+        </View>
+      )}
+      <TextInput
+        style={[styles.arrayInput, !isReordering && styles.arrayInputFull]}
+        value={item}
+        onChangeText={(text) => onUpdate(index, text)}
+        placeholder={placeholder}
+        multiline={multiline}
+        autoFocus={autoFocus}
+      />
+      <TouchableOpacity
+        onPress={() => onRemove(index)}
+        style={styles.removeButton}
+      >
+        <Ionicons
+          name="remove-circle-outline"
+          size={24}
+          color="#dc3545"
+        />
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 export default function EditScreen() {
   const { data, updateData, refresh } = useNowPage();
@@ -50,6 +128,12 @@ export default function EditScreen() {
 
   // Add state to track location fetching
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+
+  // Add state to track reordering
+  const [isReordering, setIsReordering] = useState(false);
+
+  // Add state to track the newly added key
+  const [newKey, setNewKey] = useState<string | null>(null);
 
   // Parse the initial value based on the section type
   const parseInitialValue = () => {
@@ -232,6 +316,7 @@ export default function EditScreen() {
       ...prev,
       [objectKey]: '',
     }));
+    setNewKey(objectKey);
     setObjectKey('');
   };
 
@@ -280,6 +365,24 @@ export default function EditScreen() {
     }
   };
 
+  const handleMoveUp = (index: number) => {
+    if (index === 0) return;
+    setValue((prev: string[]) => {
+      const newArray = [...prev];
+      [newArray[index - 1], newArray[index]] = [newArray[index], newArray[index - 1]];
+      return newArray;
+    });
+  };
+
+  const handleMoveDown = (index: number) => {
+    setValue((prev: string[]) => {
+      if (index === prev.length - 1) return prev;
+      const newArray = [...prev];
+      [newArray[index], newArray[index + 1]] = [newArray[index + 1], newArray[index]];
+      return newArray;
+    });
+  };
+
   if (!section) {
     return (
       <View style={styles.container}>
@@ -311,45 +414,62 @@ export default function EditScreen() {
             <>
               {items.length > 0 ? (
                 items.map((item: string, index: number) => (
-                  <View key={index} style={styles.arrayItem}>
-                    <TextInput
-                      style={styles.arrayInput}
-                      value={item}
-                      onChangeText={(text) =>
-                        handleUpdateArrayItem(index, text)
-                      }
-                      placeholder="Add an item"
-                      autoFocus={newItemIndex === index}
-                    />
-                    <TouchableOpacity
-                      onPress={() => handleRemoveArrayItem(index)}
-                      style={styles.removeButton}
-                    >
-                      <Ionicons
-                        name="remove-circle-outline"
-                        size={24}
-                        color="#dc3545"
-                      />
-                    </TouchableOpacity>
-                  </View>
+                  <DraggableItem
+                    key={index}
+                    item={item}
+                    index={index}
+                    onUpdate={handleUpdateArrayItem}
+                    onRemove={handleRemoveArrayItem}
+                    onMoveUp={handleMoveUp}
+                    onMoveDown={handleMoveDown}
+                    placeholder="Add an item"
+                    autoFocus={newItemIndex === index}
+                    isFirst={index === 0}
+                    isLast={index === items.length - 1}
+                    isReordering={isReordering}
+                  />
                 ))
               ) : (
                 <Text style={styles.emptyText}>
                   No items yet. Add one below!
                 </Text>
               )}
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={handleAddArrayItem}
-              >
-                <Text style={styles.addButtonText}>Add Item</Text>
-              </TouchableOpacity>
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={styles.addButton}
+                  onPress={handleAddArrayItem}
+                >
+                  <Text style={styles.addButtonText}>Add Item</Text>
+                </TouchableOpacity>
+              </View>
             </>
           );
 
         case 'object':
           return (
             <>
+              {Object.entries(value || {}).map(([key, val]) => (
+                <View key={key} style={styles.objectItem}>
+                  <Text style={styles.objectKey}>{key}:</Text>
+                  <TextInput
+                    style={styles.objectValue}
+                    value={String(val || '')}
+                    onChangeText={(text) =>
+                      setValue((prev: ObjectValue) => ({
+                        ...prev,
+                        [key]: text,
+                      }))
+                    }
+                    placeholder={`Enter value for ${key}`}
+                    autoFocus={key === newKey}
+                    onFocus={() => {
+                      if (key === newKey) {
+                        setNewKey(null);
+                      }
+                    }}
+                  />
+                </View>
+              ))}
               <View style={styles.objectKeyInput}>
                 <TextInput
                   style={[styles.input, styles.keyInput]}
@@ -365,22 +485,6 @@ export default function EditScreen() {
                   <Text style={styles.addButtonText}>Add Key</Text>
                 </TouchableOpacity>
               </View>
-              {Object.entries(value || {}).map(([key, val]) => (
-                <View key={key} style={styles.objectItem}>
-                  <Text style={styles.objectKey}>{key}:</Text>
-                  <TextInput
-                    style={styles.objectValue}
-                    value={String(val || '')}
-                    onChangeText={(text) =>
-                      setValue((prev: ObjectValue) => ({
-                        ...prev,
-                        [key]: text,
-                      }))
-                    }
-                    placeholder={`Enter value for ${key}`}
-                  />
-                </View>
-              ))}
             </>
           );
       }
@@ -461,38 +565,45 @@ export default function EditScreen() {
           <>
             {items.length > 0 ? (
               items.map((item: string, index: number) => (
-                <View key={index} style={styles.arrayItem}>
-                  <TextInput
-                    style={styles.arrayInput}
-                    value={item}
-                    onChangeText={(text) => handleUpdateArrayItem(index, text)}
-                    placeholder={`Add a ${section.slice(0, -1)}`}
-                    multiline={section === 'projects'}
-                    autoFocus={newItemIndex === index}
-                  />
-                  <TouchableOpacity
-                    onPress={() => handleRemoveArrayItem(index)}
-                    style={styles.removeButton}
-                  >
-                    <Ionicons
-                      name="remove-circle-outline"
-                      size={24}
-                      color="#dc3545"
-                    />
-                  </TouchableOpacity>
-                </View>
+                <DraggableItem
+                  key={index}
+                  item={item}
+                  index={index}
+                  onUpdate={handleUpdateArrayItem}
+                  onRemove={handleRemoveArrayItem}
+                  onMoveUp={handleMoveUp}
+                  onMoveDown={handleMoveDown}
+                  placeholder={`Add a ${section.slice(0, -1)}`}
+                  multiline={section === 'projects'}
+                  autoFocus={newItemIndex === index}
+                  isFirst={index === 0}
+                  isLast={index === items.length - 1}
+                  isReordering={isReordering}
+                />
               ))
             ) : (
               <Text style={styles.emptyText}>
                 No {section} yet. Add one below!
               </Text>
             )}
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={handleAddArrayItem}
-            >
-              <Text style={styles.addButtonText}>Add Item</Text>
-            </TouchableOpacity>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={handleAddArrayItem}
+              >
+                <Text style={styles.addButtonText}>Add Item</Text>
+              </TouchableOpacity>
+              {items.length > 1 && (
+                <TouchableOpacity
+                  style={[styles.addButton]}
+                  onPress={() => setIsReordering(!isReordering)}
+                >
+                  <Text style={styles.addButtonText}>
+                    {isReordering ? 'Done Reordering' : 'Reorder Items'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </>
         );
 
@@ -503,58 +614,49 @@ export default function EditScreen() {
             <>
               {items.length > 0 ? (
                 items.map((item: string, index: number) => (
-                  <View key={index} style={styles.arrayItem}>
-                    <TextInput
-                      style={styles.arrayInput}
-                      value={item}
-                      onChangeText={(text) =>
-                        handleUpdateArrayItem(index, text)
-                      }
-                      placeholder={`Add an item`}
-                      autoFocus={newItemIndex === index}
-                    />
-                    <TouchableOpacity
-                      onPress={() => handleRemoveArrayItem(index)}
-                      style={styles.removeButton}
-                    >
-                      <Ionicons
-                        name="remove-circle-outline"
-                        size={24}
-                        color="#dc3545"
-                      />
-                    </TouchableOpacity>
-                  </View>
+                  <DraggableItem
+                    key={index}
+                    item={item}
+                    index={index}
+                    onUpdate={handleUpdateArrayItem}
+                    onRemove={handleRemoveArrayItem}
+                    onMoveUp={handleMoveUp}
+                    onMoveDown={handleMoveDown}
+                    placeholder={`Add an item`}
+                    autoFocus={newItemIndex === index}
+                    isFirst={index === 0}
+                    isLast={index === items.length - 1}
+                    isReordering={isReordering}
+                  />
                 ))
               ) : (
                 <Text style={styles.emptyText}>
                   No items yet. Add one below!
                 </Text>
               )}
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={handleAddArrayItem}
-              >
-                <Text style={styles.addButtonText}>Add Item</Text>
-              </TouchableOpacity>
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={styles.addButton}
+                  onPress={handleAddArrayItem}
+                >
+                  <Text style={styles.addButtonText}>Add Item</Text>
+                </TouchableOpacity>
+                {items.length > 1 && (
+                  <TouchableOpacity
+                    style={[styles.addButton]}
+                    onPress={() => setIsReordering(!isReordering)}
+                  >
+                    <Text style={styles.addButtonText}>
+                      {isReordering ? 'Done Reordering' : 'Change Order'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </>
           );
         } else if (typeof value === 'object' && value !== null) {
           return (
             <>
-              <View style={styles.objectKeyInput}>
-                <TextInput
-                  style={[styles.input, styles.keyInput]}
-                  value={objectKey}
-                  onChangeText={setObjectKey}
-                  placeholder="Enter key name"
-                />
-                <TouchableOpacity
-                  style={[styles.addButton, styles.addKeyButton]}
-                  onPress={handleAddObjectKey}
-                >
-                  <Text style={styles.addButtonText}>Add Key</Text>
-                </TouchableOpacity>
-              </View>
               {Object.entries(value).map(([key, val]) => (
                 <View key={key} style={styles.objectItem}>
                   <Text style={styles.objectKey}>{key}:</Text>
@@ -568,9 +670,30 @@ export default function EditScreen() {
                       }))
                     }
                     placeholder={`Enter value for ${key}`}
+                    autoFocus={key === newKey}
+                    onFocus={() => {
+                      if (key === newKey) {
+                        setNewKey(null);
+                      }
+                    }}
                   />
                 </View>
               ))}
+              <View style={styles.objectKeyInput}>
+                <TextInput
+                  style={[styles.input, styles.keyInput]}
+                  value={objectKey}
+                  onChangeText={setObjectKey}
+                  placeholder="Enter key name"
+                  autoFocus
+                />
+                <TouchableOpacity
+                  style={[styles.addButton, styles.addKeyButton]}
+                  onPress={handleAddObjectKey}
+                >
+                  <Text style={styles.addButtonText}>Add Key</Text>
+                </TouchableOpacity>
+              </View>
             </>
           );
         } else {
@@ -650,6 +773,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 8,
   },
   arrayInput: {
     flex: 1,
@@ -669,6 +795,7 @@ const styles = StyleSheet.create({
     padding: 12,
     alignItems: 'center',
     marginTop: 8,
+    flex: 1,
   },
   addButtonText: {
     color: '#fff',
@@ -708,7 +835,8 @@ const styles = StyleSheet.create({
   },
   addKeyButton: {
     marginTop: 0,
-    paddingVertical: 8,
+    paddingTop: 12,
+    paddingBottom: 0,
     paddingHorizontal: 16,
   },
   objectItem: {
@@ -747,5 +875,44 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 8,
     backgroundColor: '#f0f0f0',
+  },
+  dragHandle: {
+    padding: 8,
+    marginRight: 8,
+    minWidth: 40,
+    minHeight: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  draggingItem: {
+    opacity: 0.8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  reorderButtons: {
+    flexDirection: 'column',
+    marginRight: 8,
+    justifyContent: 'center',
+  },
+  reorderButton: {
+    padding: 4,
+    borderRadius: 4,
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+  buttonContainer: {
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  arrayInputFull: {
+    marginLeft: 0,
   },
 });
