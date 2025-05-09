@@ -9,6 +9,7 @@ export interface NowPageData {
   projects?: string[];
   location?: string;
   [key: string]: any;
+  updatedAt: Date;
 }
 
 export type FieldType = 'string' | 'object' | 'array';

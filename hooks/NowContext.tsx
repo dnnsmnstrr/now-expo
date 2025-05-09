@@ -6,6 +6,18 @@ import { NowPageData } from '../types/now-page';
 
 interface GistResponse {
   data: {
+    updated_at: string;
+    created_at: string;
+    history: Array<{
+      version: string;
+      committed_at: string;
+      url: string;
+      change_status: {
+        total: number;
+        additions: number;
+        deletions: number;
+      };
+    }>;
     files: {
       [key: string]: {
         filename: string;
@@ -53,14 +65,16 @@ export function NowProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
 
-      const response = await octokit.request('GET /gists/{gist_id}', {
+      const response = (await octokit.request('GET /gists/{gist_id}', {
         gist_id: currentGistId,
-      }) as GistResponse;
+      })) as GistResponse;
 
       const nowFile = response.data.files['now.json'];
-      console.log(nowFile)
+      console.log(nowFile);
       if (nowFile && nowFile.content) {
-        setData(JSON.parse(nowFile.content));
+        const parsedData = JSON.parse(nowFile.content);
+        const updatedAt = new Date(response.data.updated_at);
+        setData({ ...parsedData, updatedAt });
       } else {
         setError('now.json not found in the selected Gist');
       }
@@ -96,8 +110,8 @@ export function NowProvider({ children }: { children: React.ReactNode }) {
         files: {
           'now.json': {
             content: JSON.stringify(newData, null, 2),
-          }
-        }
+          },
+        },
       });
 
       setData(newData);
@@ -111,11 +125,11 @@ export function NowProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <NowContext.Provider 
-      value={{ 
-        data, 
-        loading, 
-        error, 
+    <NowContext.Provider
+      value={{
+        data,
+        loading,
+        error,
         updateData,
         refresh: fetchData,
       }}
@@ -127,4 +141,4 @@ export function NowProvider({ children }: { children: React.ReactNode }) {
 
 export function useNowPage() {
   return useContext(NowContext);
-} 
+}

@@ -30,13 +30,14 @@ export default function NowScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     await refresh();
+    console.log(console.log(JSON.stringify(data, null, 4)))
     setRefreshing(false);
   };
 
   useEffect(() => {
     onRefresh()
   }, [currentGistId])
-  
+
   if (!currentGistId) {
     return (
       <View style={styles.container}>
