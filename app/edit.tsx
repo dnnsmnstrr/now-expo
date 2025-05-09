@@ -566,18 +566,14 @@ export default function EditScreen() {
                     if (match) {
                       const playlistId = match[1] || match[2];
                       try {
-                        // Fetch playlist details from Spotify's embed API
-                        const response = await fetch(`https://open.spotify.com/embed/playlist/${playlistId}`);
+                        // Use a CORS proxy to fetch the playlist page
+                        const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(`https://open.spotify.com/playlist/${playlistId}`)}`);
                         const html = await response.text();
+                        
                         // Extract the playlist name from the embed data
-                        const nameMatch = html.match(/"namec":"(.*?)"/);
+                        const nameMatch = html.match(/"name":"(.*?)"/);
                         if (nameMatch) {
-                          // Remove "Spotify - " prefix and " - playlist by" suffix
-                          const playlistName = nameMatch[1]
-                            .replace('Spotify - ', '')
-                            .replace(/ - playlist by.*$/, '')
-                            .trim();
-                            
+                          const playlistName = nameMatch[1].trim();
                           setValue((prev: PlaylistValue) => ({
                             ...prev,
                             name: playlistName,
@@ -589,7 +585,6 @@ export default function EditScreen() {
                             ...prev,
                             uri: playlistId,
                           }));
-                          // Alert.alert('Note', 'Could not fetch playlist name. Please enter it manually.');
                         }
                       } catch (error) {
                         // If fetching fails, just set the URI
@@ -597,7 +592,6 @@ export default function EditScreen() {
                           ...prev,
                           uri: playlistId,
                         }));
-                        Alert.alert('Note', 'Could not fetch playlist name. Please enter it manually.');
                       }
                     } else {
                       Alert.alert('Error', 'No valid Spotify playlist URL found in clipboard');
