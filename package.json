@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "EXPO_NO_TELEMETRY=1 expo start",
     "build:web": "expo export --platform web",
-    "deploy": "npx expo export --platform web && eas deploy --prod",
+    "deploy": "npx expo export --platform web && eas deploy --prod && eas update",
     "lint": "expo lint"
   },
   "dependencies": {
@@ -43,7 +43,8 @@
     "react-native-screens": "~4.10.0",
     "react-native-url-polyfill": "^2.0.0",
     "react-native-web": "^0.20.0",
-    "react-native-webview": "13.13.5"
+    "react-native-webview": "13.13.5",
+    "expo-updates": "~0.28.12"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

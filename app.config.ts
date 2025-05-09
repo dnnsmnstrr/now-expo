@@ -15,7 +15,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     backgroundColor: '#ffffff'
   },
   updates: {
-    fallbackToCacheTimeout: 0
+    fallbackToCacheTimeout: 0,
+    url: "https://u.expo.dev/11b66978-2637-4978-b7aa-80c5df230852"
   },
   assetBundlePatterns: [
     '**/*'
@@ -39,6 +40,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-router',
     'expo-web-browser'
   ],
+  runtimeVersion: {
+    "policy": "appVersion"
+  },
   experiments: {
     typedRoutes: true
   }
