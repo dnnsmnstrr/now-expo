@@ -12,6 +12,7 @@ import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useNowPage } from '../hooks/NowContext';
 import { Ionicons } from '@expo/vector-icons';
 import { NowPageData } from '../types/now-page';
+import * as Location from 'expo-location';
 
 interface PlaylistValue {
   name: string;
@@ -40,6 +41,9 @@ export default function EditScreen() {
 
   // Add state to track the index of the newly added item
   const [newItemIndex, setNewItemIndex] = useState<number | null>(null);
+
+  // Add state to track location fetching
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
 
   // Parse the initial value based on the section type
   const parseInitialValue = () => {
@@ -217,6 +221,41 @@ export default function EditScreen() {
     return `What's your current ${formatted}?`;
   };
 
+  const getCurrentLocation = async () => {
+    try {
+      setIsGettingLocation(true);
+      
+      // Request location permissions
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Location permission is required to get your current location.');
+        return;
+      }
+
+      // Get current location
+      const location = await Location.getCurrentPositionAsync({});
+      
+      // Reverse geocode to get address
+      const [address] = await Location.reverseGeocodeAsync({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude
+      });
+
+      if (address) {
+        const locationString = [
+          address.city,
+          address.country
+        ].filter(Boolean).join(', ');
+        
+        setValue(locationString);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to get your current location. Please try again.');
+    } finally {
+      setIsGettingLocation(false);
+    }
+  };
+
   if (!section) {
     return (
       <View style={styles.container}>
@@ -309,7 +348,6 @@ export default function EditScreen() {
     // For existing fields, use the previous logic
     switch (section) {
       case 'status':
-      case 'location':
         return (
           <TextInput
             style={styles.input}
@@ -319,6 +357,30 @@ export default function EditScreen() {
             multiline={section === 'status'}
             autoFocus
           />
+        );
+      
+      case 'location':
+        return (
+          <View style={styles.locationContainer}>
+            <TextInput
+              style={[styles.input, styles.locationInput]}
+              value={value || ''}
+              onChangeText={setValue}
+              placeholder={getPlaceholder(section)}
+              autoFocus
+            />
+            <TouchableOpacity
+              style={styles.locationButton}
+              onPress={getCurrentLocation}
+              disabled={isGettingLocation}
+            >
+              {isGettingLocation ? (
+                <ActivityIndicator size="small" color="#007AFF" />
+              ) : (
+                <Ionicons name="location" size={24} color="#007AFF" />
+              )}
+            </TouchableOpacity>
+          </View>
         );
       
       case 'playlist':
@@ -583,5 +645,19 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     marginRight: 8,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  locationInput: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  locationButton: {
+    marginLeft: 8,
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
   },
 }); 

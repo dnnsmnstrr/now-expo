@@ -2,14 +2,24 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useNowPage } from '../../hooks/NowContext';
-import { Text, View, TouchableOpacity, Modal } from 'react-native';
+import { Text, View, TouchableOpacity, Modal, Platform, ActivityIndicator } from 'react-native';
 import { formatDistanceToNow, format, differenceInDays } from 'date-fns';
 import { useState } from 'react';
 
 const OUTDATED_WARNING_DAYS = 30;
 export default function TabLayout() {
-  const { data } = useNowPage();
+  const { data, refresh } = useNowPage();
   const [showTimestamp, setShowTimestamp] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    try {
+      setIsRefreshing(true);
+      await refresh();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const formatDate = (date: Date) => {
     return format(date, 'MMM d, h:mm a');
@@ -48,6 +58,21 @@ export default function TabLayout() {
                   <Text style={{ color: isTimestampOneMonthAgo ? '#FF0000' : '#666', fontSize: 12 }}>
                     Updated {formatDistanceToNow(data.updatedAt, { addSuffix: true })}
                   </Text>
+                </TouchableOpacity>
+              ) : null
+            ),
+            headerRight: () => (
+              Platform.OS === 'web' ? (
+                <TouchableOpacity 
+                  onPress={handleRefresh}
+                  disabled={isRefreshing}
+                  style={{ marginRight: 16 }}
+                >
+                  {isRefreshing ? (
+                    <ActivityIndicator size="small" color="#007AFF" />
+                  ) : (
+                    <Ionicons name="refresh" size={24} color="#007AFF" />
+                  )}
                 </TouchableOpacity>
               ) : null
             ),
