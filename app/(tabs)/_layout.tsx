@@ -7,6 +7,7 @@ import { formatDistanceToNow, format, differenceInDays } from 'date-fns';
 import { useState } from 'react';
 
 const OUTDATED_WARNING_DAYS = 30;
+
 export default function TabLayout() {
   const { data, refresh } = useNowPage();
   const [showTimestamp, setShowTimestamp] = useState(false);
@@ -45,7 +46,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="index"
           options={{
-            title: 'Now',
+            title: '',
             tabBarIcon: ({ size, color }) => (
               <Ionicons name="time-outline" size={size} color={color} />
             ),
