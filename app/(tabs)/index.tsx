@@ -1,5 +1,5 @@
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator, Button } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useNowPage } from '../../hooks/NowContext';
 import { useGistContext } from '../../hooks/GistContext';
@@ -33,6 +33,10 @@ export default function NowScreen() {
     setRefreshing(false);
   };
 
+  useEffect(() => {
+    onRefresh()
+  }, [currentGistId])
+  
   if (!currentGistId) {
     return (
       <View style={styles.container}>
