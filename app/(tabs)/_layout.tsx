@@ -3,9 +3,10 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useNowPage } from '../../hooks/NowContext';
 import { Text, View, TouchableOpacity, Modal } from 'react-native';
-import { formatDistanceToNow, format } from 'date-fns';
+import { formatDistanceToNow, format, differenceInDays } from 'date-fns';
 import { useState } from 'react';
 
+const OUTDATED_WARNING_DAYS = 30;
 export default function TabLayout() {
   const { data } = useNowPage();
   const [showTimestamp, setShowTimestamp] = useState(false);
@@ -14,6 +15,8 @@ export default function TabLayout() {
     return format(date, 'MMM d, h:mm a');
   };
 
+  const now = new Date()
+  const isTimestampOneMonthAgo = differenceInDays(now, data?.updatedAt || now) > OUTDATED_WARNING_DAYS;
   return (
     <>
       <Tabs
@@ -42,7 +45,7 @@ export default function TabLayout() {
                   onPress={() => setShowTimestamp(true)}
                   style={{ marginLeft: 16 }}
                 >
-                  <Text style={{ color: '#666', fontSize: 12 }}>
+                  <Text style={{ color: isTimestampOneMonthAgo ? '#FF0000' : '#666', fontSize: 12 }}>
                     Updated {formatDistanceToNow(data.updatedAt, { addSuffix: true })}
                   </Text>
                 </TouchableOpacity>
