@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator, Button, Platform } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator, Button, Platform, Linking } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useNowPage } from '../../hooks/NowContext';
@@ -103,7 +103,17 @@ export default function NowScreen() {
               <Ionicons name="musical-notes-outline" size={24} color="#007AFF" />
               <Text style={styles.sectionTitle}>Current Playlist</Text>
             </View>
-            <Text style={styles.text}>{data.playlist.name}</Text>
+            <View style={styles.playlistContainer}>
+              <Text style={styles.text}>{data.playlist?.name}</Text>
+              {data.playlist?.uri && (
+                <TouchableOpacity 
+                  onPress={() => Linking.openURL(`https://open.spotify.com/playlist/${data.playlist.uri}`)}
+                  style={styles.spotifyButton}
+                >
+                  <Ionicons name="open-outline" size={24} color="#1DB954" />
+                </TouchableOpacity>
+              )}
+            </View>
           </TouchableOpacity>
         )}
 
@@ -256,6 +266,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginLeft: 8,
     color: '#007AFF',
+  },
+  playlistContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  spotifyButton: {
+    padding: 8,
   },
 });
 

@@ -19,6 +19,7 @@ import { useNowPage } from '../hooks/NowContext';
 import { Ionicons } from '@expo/vector-icons';
 import { NowPageData } from '../types/now-page';
 import * as Location from 'expo-location';
+import * as Clipboard from 'expo-clipboard';
 
 interface PlaylistValue {
   name: string;
@@ -543,17 +544,42 @@ export default function EditScreen() {
               placeholder="What are you listening to?"
               autoFocus
             />
-            <TextInput
-              style={styles.input}
-              value={value?.uri || ''}
-              onChangeText={(text) =>
-                setValue((prev: PlaylistValue) => ({
-                  ...prev,
-                  uri: text,
-                }))
-              }
-              placeholder="Add the Spotify URI (optional)"
-            />
+            <View style={styles.playlistUriContainer}>
+              <TextInput
+                style={[styles.input, styles.uriInput]}
+                value={value?.uri || ''}
+                onChangeText={(text) =>
+                  setValue((prev: PlaylistValue) => ({
+                    ...prev,
+                    uri: text,
+                  }))
+                }
+                placeholder="Add the Spotify URI (optional)"
+              />
+              <TouchableOpacity
+                style={styles.clipboardButton}
+                onPress={async () => {
+                  try {
+                    const text = await Clipboard.getStringAsync();
+                    // Extract playlist ID from various Spotify URL formats
+                    const match = text.match(/spotify:playlist:([a-zA-Z0-9]+)|open\.spotify\.com\/playlist\/([a-zA-Z0-9]+)/);
+                    if (match) {
+                      const playlistId = match[1] || match[2];
+                      setValue((prev: PlaylistValue) => ({
+                        ...prev,
+                        uri: playlistId,
+                      }));
+                    } else {
+                      Alert.alert('Error', 'No valid Spotify playlist URL found in clipboard');
+                    }
+                  } catch (error) {
+                    Alert.alert('Error', 'Failed to read from clipboard');
+                  }
+                }}
+              >
+                <Ionicons name="clipboard-outline" size={24} color="#007AFF" />
+              </TouchableOpacity>
+            </View>
           </>
         );
 
@@ -914,5 +940,19 @@ const styles = StyleSheet.create({
   },
   arrayInputFull: {
     marginLeft: 0,
+  },
+  playlistUriContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  uriInput: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  clipboardButton: {
+    marginLeft: 8,
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
   },
 });

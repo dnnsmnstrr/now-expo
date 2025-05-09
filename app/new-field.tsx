@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, TouchableWithoutFeedback, Keyboard, Platform } from 'react-native';
-import { useState, useRef } from 'react';
-import { useRouter } from 'expo-router';
+import { useState, useRef, useEffect } from 'react';
+import { useRouter, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 type FieldType = 'string' | 'array' | 'object';
@@ -35,10 +35,36 @@ const fieldTypes: FieldTypeOption[] = [
 
 export default function NewFieldScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const [selectedType, setSelectedType] = useState<FieldType>('string');
   const [fieldName, setFieldName] = useState('');
   const [error, setError] = useState('');
   const inputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{ marginLeft: 16 }}
+        >
+          <Text style={{ color: '#007AFF', fontSize: 17 }}>
+            Cancel
+          </Text>
+        </TouchableOpacity>
+      ),
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={handleContinue}
+          style={{ marginRight: 16 }}
+        >
+          <Text style={{ color: '#007AFF', fontSize: 17, fontWeight: '600' }}>
+            Create
+          </Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, fieldName, selectedType]);
 
   const handleContinue = () => {
     if (!fieldName.trim()) {
@@ -83,6 +109,7 @@ export default function NewFieldScreen() {
             }}
             placeholder="Enter field name"
             placeholderTextColor="#999"
+            autoCapitalize="none"
           />
         </View>
 
