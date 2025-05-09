@@ -93,6 +93,7 @@ export function GistProvider({ children }: { children: React.ReactNode }) {
         }
       }
       
+      // If we find exactly one now.json gist, select it automatically
       if (nowGists.length && !currentGistId) {
         await selectGist(nowGists[0].id);
       }

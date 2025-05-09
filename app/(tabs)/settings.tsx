@@ -236,7 +236,7 @@ export default function SettingsScreen() {
   const handleSelectGist = async (gistId: string) => {
     try {
       await selectGist(gistId);
-      // router.replace('/(tabs)');
+      router.replace('/(tabs)');
     } catch (error) {
       Alert.alert('Error', 'Failed to select gist. Please try again.');
     }

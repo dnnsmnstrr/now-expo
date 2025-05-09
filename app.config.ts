@@ -36,7 +36,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     output: 'server'
   },
   plugins: [
-    'expo-router'
+    'expo-router',
+    'expo-web-browser'
   ],
   experiments: {
     typedRoutes: true
