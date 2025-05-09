@@ -765,20 +765,18 @@ export default function EditScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <ScrollView 
-          style={styles.container}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.content}>
-            <View style={styles.section}>{renderField()}</View>
-            {isMarkdownField && (
-              <Text style={styles.hint}>Markdown formatting supported.</Text>
-            )}
-          </View>
-        </ScrollView>
-      </TouchableWithoutFeedback>
+      <ScrollView 
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.content}>
+          <View style={styles.section}>{renderField()}</View>
+          {isMarkdownField && (
+            <Text style={styles.hint}>Markdown formatting supported.</Text>
+          )}
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
