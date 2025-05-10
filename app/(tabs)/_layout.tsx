@@ -56,6 +56,12 @@ export default function TabLayout() {
     );
   };
 
+  const handleViewCurrent = async () => {
+    setSelectedVersionUrl(null);
+    await refresh();
+    setShowTimestamp(false);
+  };
+
   const formatDate = (date: Date) => {
     return format(date, 'MMM d, h:mm a');
   };
@@ -192,10 +198,28 @@ export default function TabLayout() {
             top: 50,
             left: 10,
           }}>
-            <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 16, color: '#333' }}>
-              Version History
-            </Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <Text style={{ fontSize: 18, fontWeight: '600', color: '#333' }}>
+                Version History
+              </Text>
+            </View>
             <ScrollView style={{ maxHeight: 400 }}>
+              {selectedVersionUrl && (
+                <TouchableOpacity 
+                  onPress={handleViewCurrent}
+                  style={{
+                    backgroundColor: '#f0f0f0',
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    marginBottom: 16,
+                    borderRadius: 6,
+                  }}
+                >
+                  <Text style={{ color: '#666', fontSize: 14, fontWeight: '500' }}>
+                    Current Version
+                  </Text>
+                </TouchableOpacity>
+              )}
               {versionHistory?.map((version, index) => (
                 <TouchableOpacity
                   key={version.version}
