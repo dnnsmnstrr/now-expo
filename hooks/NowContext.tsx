@@ -27,12 +27,35 @@ interface GistResponse {
   };
 }
 
+interface VersionResponse {
+  updated_at: string;
+  created_at: string;
+  files: {
+    [key: string]: {
+      filename: string;
+      content: string;
+    } | null;
+  };
+}
+
 interface NowContextType {
   data: NowPageData | null;
   loading: boolean;
   error: string | null;
   updateData: (newData: NowPageData) => Promise<void>;
   refresh: () => Promise<void>;
+  versionHistory: Array<{
+    version: string;
+    committed_at: string;
+    url: string;
+    change_status: {
+      total: number;
+      additions: number;
+      deletions: number;
+    };
+  }> | null;
+  loadVersion: (versionUrl: string) => Promise<void>;
+  selectedVersion: string | null;
 }
 
 const NowContext = createContext<NowContextType>({
@@ -41,6 +64,9 @@ const NowContext = createContext<NowContextType>({
   error: null,
   updateData: async () => {},
   refresh: async () => {},
+  versionHistory: null,
+  loadVersion: async () => {},
+  selectedVersion: null,
 });
 
 export function NowProvider({ children }: { children: React.ReactNode }) {
@@ -49,10 +75,37 @@ export function NowProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState<NowPageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [versionHistory, setVersionHistory] = useState<NowContextType['versionHistory']>(null);
+  const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
 
   const octokit = new Octokit({
     auth: token,
   });
+
+  const loadVersion = async (versionUrl: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await octokit.request(versionUrl);
+      const versionData = response.data as VersionResponse;
+      
+      const nowFile = versionData.files['now.json'];
+      if (nowFile && nowFile.content) {
+        const parsedData = JSON.parse(nowFile.content);
+        const updatedAt = new Date(versionData.updated_at);
+        setData({ ...parsedData, updatedAt });
+        setSelectedVersion(versionUrl);
+      } else {
+        setError('now.json not found in the selected version');
+      }
+    } catch (err) {
+      setError('Failed to load version');
+      console.error('Error loading version:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchData = async () => {
     if (!currentGistId) {
@@ -70,11 +123,12 @@ export function NowProvider({ children }: { children: React.ReactNode }) {
       })) as GistResponse;
 
       const nowFile = response.data.files['now.json'];
-      console.log(nowFile);
       if (nowFile && nowFile.content) {
         const parsedData = JSON.parse(nowFile.content);
         const updatedAt = new Date(response.data.updated_at);
         setData({ ...parsedData, updatedAt });
+        setVersionHistory(response.data.history);
+        setSelectedVersion(null); // Reset selected version when fetching latest
       } else {
         setError('now.json not found in the selected Gist');
       }
@@ -132,6 +186,9 @@ export function NowProvider({ children }: { children: React.ReactNode }) {
         error,
         updateData,
         refresh: fetchData,
+        versionHistory,
+        loadVersion,
+        selectedVersion,
       }}
     >
       {children}
