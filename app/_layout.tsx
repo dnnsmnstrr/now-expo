@@ -4,7 +4,8 @@ import { StatusBar } from 'expo-status-bar';
 import { GistProvider } from '../hooks/GistContext';
 import { NowProvider } from '../hooks/NowContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, useColorScheme } from 'react-native';
+import { Colors } from '../constants/Colors';
 
 declare global {
   interface Window {
@@ -13,15 +14,30 @@ declare global {
 }
 
 export default function RootLayout() {
+  const colorScheme = useColorScheme() ?? 'light';
+
   useEffect(() => {
     window.frameworkReady?.();
   }, []);
 
   return (
-    <GestureHandlerRootView style={styles.container}>
+    <GestureHandlerRootView style={[styles.container, { backgroundColor: Colors[colorScheme].background }]}>
       <GistProvider>
         <NowProvider>
-          <Stack>
+          <Stack
+            screenOptions={{
+              headerStyle: {
+                backgroundColor: Colors[colorScheme].cardBackground,
+              },
+              headerTintColor: Colors[colorScheme].tint,
+              headerTitleStyle: {
+                color: Colors[colorScheme].text,
+              },
+              contentStyle: {
+                backgroundColor: Colors[colorScheme].background,
+              },
+            }}
+          >
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen 
               name="edit" 
@@ -29,9 +45,6 @@ export default function RootLayout() {
                 presentation: 'modal',
                 headerShown: true,
                 headerTitle: 'Edit Now Page',
-                headerStyle: {
-                  backgroundColor: '#fff',
-                },
                 headerShadowVisible: false,
               }} 
             />
@@ -41,14 +54,11 @@ export default function RootLayout() {
                 presentation: 'modal',
                 headerShown: true,
                 headerTitle: 'Add New Field',
-                headerStyle: {
-                  backgroundColor: '#fff',
-                },
                 headerShadowVisible: false,
               }} 
             />
           </Stack>
-          <StatusBar style="auto" />
+          <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
         </NowProvider>
       </GistProvider>
     </GestureHandlerRootView>

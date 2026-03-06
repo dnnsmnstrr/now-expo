@@ -2,13 +2,16 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useNowPage } from '../../hooks/NowContext';
-import { Text, View, TouchableOpacity, Modal, Platform, ActivityIndicator, ScrollView, Alert } from 'react-native';
+import { Text, View, TouchableOpacity, Modal, Platform, ActivityIndicator, ScrollView, Alert, useColorScheme } from 'react-native';
 import { formatDistanceToNow, format, differenceInDays } from 'date-fns';
 import { useState } from 'react';
+import { Colors } from '../../constants/Colors';
 
 const OUTDATED_WARNING_DAYS = 30;
 
 export default function TabLayout() {
+  const colorScheme = useColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
   const { data, refresh, versionHistory, loadVersion, selectedVersion } = useNowPage();
   const [showTimestamp, setShowTimestamp] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -78,15 +81,19 @@ export default function TabLayout() {
       <Tabs
         screenOptions={{
           tabBarStyle: {
-            backgroundColor: '#fff',
+            backgroundColor: theme.cardBackground,
             borderTopWidth: 1,
-            borderTopColor: '#e5e5e5',
+            borderTopColor: theme.border,
           },
-          tabBarActiveTintColor: '#007AFF',
+          tabBarActiveTintColor: theme.tint,
+          tabBarInactiveTintColor: theme.tabIconDefault,
           headerStyle: {
-            backgroundColor: '#fff',
+            backgroundColor: theme.cardBackground,
           },
           headerShadowVisible: false,
+          headerTitleStyle: {
+            color: theme.text,
+          },
         }}>
         <Tabs.Screen
           name="index"
@@ -102,11 +109,11 @@ export default function TabLayout() {
                   style={{ marginLeft: 16 }}
                 >
                   {selectedVersionData ? (
-                    <Text style={{ color: '#007AFF', fontSize: 12 }}>
+                    <Text style={{ color: theme.tint, fontSize: 12 }}>
                       Version from {formatDate(new Date(selectedVersionData.committed_at))}
                     </Text>
                   ) : (
-                    <Text style={{ color: isTimestampOneMonthAgo ? '#FF0000' : '#666', fontSize: 12 }}>
+                    <Text style={{ color: isTimestampOneMonthAgo ? theme.error : theme.secondaryText, fontSize: 12 }}>
                       Updated {formatDistanceToNow(data.updatedAt, { addSuffix: true })}
                     </Text>
                   )}
@@ -119,7 +126,7 @@ export default function TabLayout() {
                   <TouchableOpacity 
                     onPress={handleRevert}
                     style={{
-                      backgroundColor: '#007AFF',
+                      backgroundColor: theme.tint,
                       paddingHorizontal: 12,
                       paddingVertical: 6,
                       borderRadius: 6,
@@ -137,9 +144,9 @@ export default function TabLayout() {
                     disabled={isRefreshing}
                   >
                     {isRefreshing ? (
-                      <ActivityIndicator size="small" color="#007AFF" />
+                      <ActivityIndicator size="small" color={theme.tint} />
                     ) : (
-                      <Ionicons name="refresh" size={24} color="#007AFF" />
+                      <Ionicons name="refresh" size={24} color={theme.tint} />
                     )}
                   </TouchableOpacity>
                 )}
@@ -170,7 +177,7 @@ export default function TabLayout() {
         <TouchableOpacity 
           style={{ 
             flex: 1, 
-            backgroundColor: 'rgba(0,0,0,0.5)',
+            backgroundColor: theme.modalOverlay,
             justifyContent: 'center',
             alignItems: 'center'
           }}
@@ -181,7 +188,7 @@ export default function TabLayout() {
           }}
         >
           <View style={{ 
-            backgroundColor: 'white', 
+            backgroundColor: theme.cardBackground,
             padding: 20, 
             borderRadius: 10,
             shadowColor: '#000',
@@ -199,7 +206,7 @@ export default function TabLayout() {
             left: 10,
           }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <Text style={{ fontSize: 18, fontWeight: '600', color: '#333' }}>
+              <Text style={{ fontSize: 18, fontWeight: '600', color: theme.text }}>
                 Version History
               </Text>
             </View>
@@ -208,14 +215,14 @@ export default function TabLayout() {
                 <TouchableOpacity 
                   onPress={handleViewCurrent}
                   style={{
-                    backgroundColor: '#f0f0f0',
+                    backgroundColor: theme.background,
                     paddingHorizontal: 12,
                     paddingVertical: 6,
                     marginBottom: 16,
                     borderRadius: 6,
                   }}
                 >
-                  <Text style={{ color: '#666', fontSize: 14, fontWeight: '500' }}>
+                  <Text style={{ color: theme.secondaryText, fontSize: 14, fontWeight: '500' }}>
                     Current Version
                   </Text>
                 </TouchableOpacity>
@@ -228,17 +235,17 @@ export default function TabLayout() {
                     marginBottom: 16,
                     paddingBottom: 16,
                     borderBottomWidth: index === versionHistory.length - 1 ? 0 : 1,
-                    borderBottomColor: '#e5e5e5',
-                    backgroundColor: selectedVersionUrl === version.url ? '#f0f7ff' : 'transparent',
+                    borderBottomColor: theme.border,
+                      backgroundColor: selectedVersionUrl === version.url ? theme.selectedItem : 'transparent',
                     padding: 12,
                     borderRadius: 8,
                   }}
                 >
-                  <Text style={{ fontSize: 14, color: '#666', marginBottom: 4 }}>
+                  <Text style={{ fontSize: 14, color: theme.secondaryText, marginBottom: 4 }}>
                     {formatDate(new Date(version.committed_at))}
                   </Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 12, color: '#007AFF', marginRight: 8 }}>
+                    <Text style={{ fontSize: 12, color: theme.tint, marginRight: 8 }}>
                       {version.version.substring(0, 7)}
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -248,7 +255,7 @@ export default function TabLayout() {
                         </Text>
                       )}
                       {version.change_status.deletions > 0 && (
-                        <Text style={{ fontSize: 12, color: '#dc3545' }}>
+                        <Text style={{ fontSize: 12, color: theme.error }}>
                           -{version.change_status.deletions}
                         </Text>
                       )}
@@ -257,7 +264,7 @@ export default function TabLayout() {
                 </TouchableOpacity>
               ))}
             </ScrollView>
-            <Text style={{ textAlign: 'center', opacity: 0.4 }}>{versionHistory?.length || 0} Updates</Text>
+            <Text style={{ textAlign: 'center', opacity: 0.4, color: theme.text }}>{versionHistory?.length || 0} Updates</Text>
           </View>
         </TouchableOpacity>
       </Modal>

@@ -1,7 +1,8 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, TouchableWithoutFeedback, Keyboard, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, TouchableWithoutFeedback, Keyboard, Platform, useColorScheme } from 'react-native';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '../constants/Colors';
 
 type FieldType = 'string' | 'array' | 'object';
 
@@ -34,6 +35,8 @@ const fieldTypes: FieldTypeOption[] = [
 ];
 
 export default function NewFieldScreen() {
+  const colorScheme = useColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
   const router = useRouter();
   const navigation = useNavigation();
   const [selectedType, setSelectedType] = useState<FieldType>('string');
@@ -48,7 +51,7 @@ export default function NewFieldScreen() {
           onPress={() => router.back()}
           style={{ marginLeft: 16 }}
         >
-          <Text style={{ color: '#007AFF', fontSize: 17 }}>
+          <Text style={{ color: theme.tint, fontSize: 17 }}>
             Cancel
           </Text>
         </TouchableOpacity>
@@ -58,13 +61,13 @@ export default function NewFieldScreen() {
           onPress={handleContinue}
           style={{ marginRight: 16 }}
         >
-          <Text style={{ color: '#007AFF', fontSize: 17, fontWeight: '600' }}>
+          <Text style={{ color: theme.tint, fontSize: 17, fontWeight: '600' }}>
             Create
           </Text>
         </TouchableOpacity>
       ),
     });
-  }, [navigation, fieldName, selectedType]);
+  }, [navigation, fieldName, selectedType, theme]);
 
   const handleContinue = () => {
     if (!fieldName.trim()) {
@@ -94,33 +97,34 @@ export default function NewFieldScreen() {
         inputRef.current?.blur();
       }
     }}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Add New Field</Text>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <Text style={[styles.title, { color: theme.text }]}>Add New Field</Text>
         
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Field Name</Text>
+          <Text style={[styles.label, { color: theme.text }]}>Field Name</Text>
           <TextInput
             ref={inputRef}
-            style={styles.input}
+            style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.text }]}
             value={fieldName}
             onChangeText={(text) => {
               setFieldName(text);
               setError('');
             }}
             placeholder="Enter field name"
-            placeholderTextColor="#999"
+            placeholderTextColor={theme.secondaryText}
             autoCapitalize="none"
           />
         </View>
 
-        <Text style={styles.label}>Field Type</Text>
+        <Text style={[styles.label, { color: theme.text }]}>Field Type</Text>
         <View style={styles.typeContainer}>
           {fieldTypes.map((type) => (
             <TouchableOpacity
               key={type.type}
               style={[
                 styles.typeOption,
-                selectedType === type.type && styles.selectedType
+                { backgroundColor: theme.cardBackground, borderColor: theme.border },
+                selectedType === type.type && [styles.selectedType, { backgroundColor: theme.tint, borderColor: theme.tint }]
               ]}
               onPress={() => {
                 setSelectedType(type.type);
@@ -130,16 +134,18 @@ export default function NewFieldScreen() {
               <Ionicons
                 name={type.icon as any}
                 size={24}
-                color={selectedType === type.type ? '#fff' : '#007AFF'}
+                color={selectedType === type.type ? '#fff' : theme.tint}
               />
               <Text style={[
                 styles.typeLabel,
+                { color: theme.text },
                 selectedType === type.type && styles.selectedTypeText
               ]}>
                 {type.label}
               </Text>
               <Text style={[
                 styles.typeDescription,
+                { color: theme.secondaryText },
                 selectedType === type.type && styles.selectedTypeText
               ]}>
                 {type.description}
@@ -148,7 +154,7 @@ export default function NewFieldScreen() {
           ))}
         </View>
         <TouchableOpacity
-          style={[styles.continueButton, !fieldName.trim() && styles.continueButtonDisabled]}
+          style={[styles.continueButton, { backgroundColor: theme.tint }, !fieldName.trim() && [styles.continueButtonDisabled, { backgroundColor: theme.border }]]}
           onPress={handleContinue}
           disabled={!fieldName.trim()}
         >
@@ -156,7 +162,7 @@ export default function NewFieldScreen() {
             Continue
           </Text>
         </TouchableOpacity>
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? <Text style={[styles.error, { color: theme.error }]}>{error}</Text> : null}
       </View>
     </TouchableWithoutFeedback>
   );
@@ -165,14 +171,12 @@ export default function NewFieldScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
     padding: 16,
   },
   title: {
     fontSize: 24,
     fontWeight: '600',
     marginBottom: 24,
-    color: '#1a1a1a',
   },
   inputContainer: {
     marginBottom: 16,
@@ -181,59 +185,47 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     marginBottom: 8,
-    color: '#1a1a1a',
   },
   input: {
-    backgroundColor: '#fff',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#e1e1e1',
   },
   typeContainer: {
     gap: 12,
   },
   typeOption: {
-    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e1e1e1',
   },
   selectedType: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
   },
   typeLabel: {
     fontSize: 16,
     fontWeight: '500',
     marginLeft: 12,
-    color: '#1a1a1a',
   },
   typeDescription: {
     fontSize: 14,
-    color: '#666',
     marginLeft: 'auto',
   },
   selectedTypeText: {
     color: '#fff',
   },
   error: {
-    color: '#dc3545',
     marginTop: 16,
   },
   continueButton: {
-    backgroundColor: '#007AFF',
     borderRadius: 8,
     padding: 16,
     alignItems: 'center',
     marginTop: 24,
   },
   continueButtonDisabled: {
-    backgroundColor: '#ccc',
   },
   continueButtonText: {
     color: '#fff',
