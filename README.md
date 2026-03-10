@@ -11,3 +11,5 @@ Edit data for a now page, stored in a GitHub Gist
 ### Deploy
 
 `npx expo export --platform web && eas deploy --prod` (or `npm run deploy`)
+
+https://now.expo.app/

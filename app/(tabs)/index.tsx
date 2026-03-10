@@ -160,7 +160,8 @@ export default function NowScreen() {
 
         {/* Render custom fields */}
         {Object.entries(data || {}).map(([key, value]) => {
-          if (!['updatedAt', 'status', 'playlist', 'activities', 'plans', 'projects', 'location'].includes(key)) {
+          const schemaKey = '$schema'
+          if (![schemaKey, 'updatedAt', 'status', 'playlist', 'activities', 'plans', 'projects', 'location'].includes(key)) {
             // Capitalize the first letter of each word in the key
             const capitalizedKey = key
               .split(' ')
@@ -253,6 +254,7 @@ const styles = StyleSheet.create({
     padding: 12,
     marginTop: 8,
     borderWidth: 1,
+    marginBottom: 8
   },
   addButtonContent: {
     flexDirection: 'row',
