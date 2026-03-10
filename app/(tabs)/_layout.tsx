@@ -2,17 +2,33 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useNowPage } from '../../hooks/NowContext';
-import { Text, View, TouchableOpacity, Modal, Platform, ActivityIndicator, ScrollView, Alert } from 'react-native';
+import {
+  Text,
+  View,
+  TouchableOpacity,
+  Modal,
+  Platform,
+  ActivityIndicator,
+  ScrollView,
+  Alert,
+  useColorScheme,
+} from 'react-native';
 import { formatDistanceToNow, format, differenceInDays } from 'date-fns';
 import { useState } from 'react';
+import { Colors } from '../../constants/Colors';
 
 const OUTDATED_WARNING_DAYS = 30;
 
 export default function TabLayout() {
-  const { data, refresh, versionHistory, loadVersion, selectedVersion } = useNowPage();
+  const colorScheme = useColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+  const { data, refresh, versionHistory, loadVersion, selectedVersion } =
+    useNowPage();
   const [showTimestamp, setShowTimestamp] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [selectedVersionUrl, setSelectedVersionUrl] = useState<string | null>(null);
+  const [selectedVersionUrl, setSelectedVersionUrl] = useState<string | null>(
+    null,
+  );
 
   const handleRefresh = async () => {
     try {
@@ -52,7 +68,7 @@ export default function TabLayout() {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -66,80 +82,114 @@ export default function TabLayout() {
     return format(date, 'MMM d, h:mm a');
   };
 
-  const now = new Date()
-  const isTimestampOneMonthAgo = differenceInDays(now, data?.updatedAt || now) > OUTDATED_WARNING_DAYS;
+  const now = new Date();
+  const isTimestampOneMonthAgo =
+    differenceInDays(now, data?.updatedAt || now) > OUTDATED_WARNING_DAYS;
 
-  const selectedVersionData = selectedVersionUrl 
-    ? versionHistory?.find(v => v.url === selectedVersionUrl)
+  const selectedVersionData = selectedVersionUrl
+    ? versionHistory?.find((v) => v.url === selectedVersionUrl)
     : null;
 
+  const title = 'Now';
   return (
     <>
       <Tabs
         screenOptions={{
           tabBarStyle: {
-            backgroundColor: '#fff',
+            backgroundColor: theme.cardBackground,
             borderTopWidth: 1,
-            borderTopColor: '#e5e5e5',
+            borderTopColor: theme.border,
           },
-          tabBarActiveTintColor: '#007AFF',
+          tabBarActiveTintColor: theme.tint,
+          tabBarInactiveTintColor: theme.tabIconDefault,
           headerStyle: {
-            backgroundColor: '#fff',
+            backgroundColor: theme.cardBackground,
           },
           headerShadowVisible: false,
-        }}>
+          headerTitleStyle: {
+            color: theme.text,
+          },
+        }}
+      >
         <Tabs.Screen
           name="index"
           options={{
-            title: '',
             tabBarIcon: ({ size, color }) => (
               <Ionicons name="time-outline" size={size} color={color} />
             ),
-            headerLeft: () => (
+            // title: '',
+            headerTitle: () =>
               data?.updatedAt ? (
-                <TouchableOpacity 
-                  onPress={() => setShowTimestamp(true)}
-                  style={{ marginLeft: 16 }}
-                >
-                  {selectedVersionData ? (
-                    <Text style={{ color: '#007AFF', fontSize: 12 }}>
-                      Version from {formatDate(new Date(selectedVersionData.committed_at))}
-                    </Text>
-                  ) : (
-                    <Text style={{ color: isTimestampOneMonthAgo ? '#FF0000' : '#666', fontSize: 12 }}>
-                      Updated {formatDistanceToNow(data.updatedAt, { addSuffix: true })}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              ) : null
-            ),
+                <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={{ color: theme.text, fontSize: 16 }}>
+                    {title}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setShowTimestamp(true)}
+                    style={{ marginLeft: 16 }}
+                  >
+                    {selectedVersionData ? (
+                      <Text style={{ color: theme.tint, fontSize: 12 }}>
+                        Version from{' '}
+                        {formatDate(new Date(selectedVersionData.committed_at))}
+                      </Text>
+                    ) : (
+                      <Text
+                        style={{
+                          color: isTimestampOneMonthAgo
+                            ? theme.error
+                            : theme.secondaryText,
+                          fontSize: 12,
+                        }}
+                      >
+                        Updated{' '}
+                        {formatDistanceToNow(data.updatedAt, {
+                          addSuffix: true,
+                        })}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              ) : null,
             headerRight: () => (
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16 }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  marginRight: 16,
+                }}
+              >
                 {selectedVersionUrl && (
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     onPress={handleRevert}
                     style={{
-                      backgroundColor: '#007AFF',
+                      backgroundColor: theme.tint,
                       paddingHorizontal: 12,
                       paddingVertical: 6,
                       borderRadius: 6,
                       marginRight: 16,
                     }}
                   >
-                    <Text style={{ color: 'white', fontSize: 14, fontWeight: '500' }}>
+                    <Text
+                      style={{
+                        color: 'white',
+                        fontSize: 14,
+                        fontWeight: '500',
+                      }}
+                    >
                       Revert
                     </Text>
                   </TouchableOpacity>
                 )}
                 {Platform.OS === 'web' && (
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     onPress={handleRefresh}
                     disabled={isRefreshing}
                   >
                     {isRefreshing ? (
-                      <ActivityIndicator size="small" color="#007AFF" />
+                      <ActivityIndicator size="small" color={theme.tint} />
                     ) : (
-                      <Ionicons name="refresh" size={24} color="#007AFF" />
+                      <Ionicons name="refresh" size={24} color={theme.tint} />
                     )}
                   </TouchableOpacity>
                 )}
@@ -167,12 +217,12 @@ export default function TabLayout() {
           setSelectedVersionUrl(null);
         }}
       >
-        <TouchableOpacity 
-          style={{ 
-            flex: 1, 
-            backgroundColor: 'rgba(0,0,0,0.5)',
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            backgroundColor: theme.modalOverlay,
             justifyContent: 'center',
-            alignItems: 'center'
+            alignItems: 'center',
           }}
           activeOpacity={1}
           onPress={() => {
@@ -180,42 +230,59 @@ export default function TabLayout() {
             setSelectedVersionUrl(null);
           }}
         >
-          <View style={{ 
-            backgroundColor: 'white', 
-            padding: 20, 
-            borderRadius: 10,
-            shadowColor: '#000',
-            shadowOffset: {
-              width: 0,
-              height: 2,
-            },
-            shadowOpacity: 0.25,
-            shadowRadius: 3.84,
-            elevation: 5,
-            maxWidth: '90%',
-            maxHeight: '80%',
-            position: 'absolute',
-            top: 50,
-            left: 10,
-          }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <Text style={{ fontSize: 18, fontWeight: '600', color: '#333' }}>
+          <View
+            style={{
+              backgroundColor: theme.cardBackground,
+              padding: 20,
+              borderRadius: 10,
+              shadowColor: '#000',
+              shadowOffset: {
+                width: 0,
+                height: 2,
+              },
+              shadowOpacity: 0.25,
+              shadowRadius: 3.84,
+              elevation: 5,
+              maxWidth: '90%',
+              maxHeight: '80%',
+              position: 'absolute',
+              top: 50,
+              left: 10,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 16,
+              }}
+            >
+              <Text
+                style={{ fontSize: 18, fontWeight: '600', color: theme.text }}
+              >
                 Version History
               </Text>
             </View>
             <ScrollView style={{ maxHeight: 400 }}>
               {selectedVersionUrl && (
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={handleViewCurrent}
                   style={{
-                    backgroundColor: '#f0f0f0',
+                    backgroundColor: theme.background,
                     paddingHorizontal: 12,
                     paddingVertical: 6,
                     marginBottom: 16,
                     borderRadius: 6,
                   }}
                 >
-                  <Text style={{ color: '#666', fontSize: 14, fontWeight: '500' }}>
+                  <Text
+                    style={{
+                      color: theme.secondaryText,
+                      fontSize: 14,
+                      fontWeight: '500',
+                    }}
+                  >
                     Current Version
                   </Text>
                 </TouchableOpacity>
@@ -224,31 +291,55 @@ export default function TabLayout() {
                 <TouchableOpacity
                   key={version.version}
                   onPress={() => handleVersionSelect(version.url)}
-                  style={{ 
+                  style={{
                     marginBottom: 16,
                     paddingBottom: 16,
-                    borderBottomWidth: index === versionHistory.length - 1 ? 0 : 1,
-                    borderBottomColor: '#e5e5e5',
-                    backgroundColor: selectedVersionUrl === version.url ? '#f0f7ff' : 'transparent',
+                    borderBottomWidth:
+                      index === versionHistory.length - 1 ? 0 : 1,
+                    borderBottomColor: theme.border,
+                    backgroundColor:
+                      selectedVersionUrl === version.url
+                        ? theme.selectedItem
+                        : 'transparent',
                     padding: 12,
                     borderRadius: 8,
                   }}
                 >
-                  <Text style={{ fontSize: 14, color: '#666', marginBottom: 4 }}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: theme.secondaryText,
+                      marginBottom: 4,
+                    }}
+                  >
                     {formatDate(new Date(version.committed_at))}
                   </Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 12, color: '#007AFF', marginRight: 8 }}>
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: theme.tint,
+                        marginRight: 8,
+                      }}
+                    >
                       {version.version.substring(0, 7)}
                     </Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View
+                      style={{ flexDirection: 'row', alignItems: 'center' }}
+                    >
                       {version.change_status.additions > 0 && (
-                        <Text style={{ fontSize: 12, color: '#28a745', marginRight: 8 }}>
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color: '#28a745',
+                            marginRight: 8,
+                          }}
+                        >
                           +{version.change_status.additions}
                         </Text>
                       )}
                       {version.change_status.deletions > 0 && (
-                        <Text style={{ fontSize: 12, color: '#dc3545' }}>
+                        <Text style={{ fontSize: 12, color: theme.error }}>
                           -{version.change_status.deletions}
                         </Text>
                       )}
@@ -257,7 +348,11 @@ export default function TabLayout() {
                 </TouchableOpacity>
               ))}
             </ScrollView>
-            <Text style={{ textAlign: 'center', opacity: 0.4 }}>{versionHistory?.length || 0} Updates</Text>
+            <Text
+              style={{ textAlign: 'center', opacity: 0.4, color: theme.text }}
+            >
+              {versionHistory?.length || 0} Updates
+            </Text>
           </View>
         </TouchableOpacity>
       </Modal>

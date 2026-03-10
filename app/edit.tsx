@@ -13,10 +13,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   PanResponder,
+  useColorScheme,
 } from 'react-native';
 import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useNowPage } from '../hooks/NowContext';
 import { Ionicons } from '@expo/vector-icons';
+import { Colors, Theme } from '../constants/Colors';
 import { NowPageData } from '../types/now-page';
 import * as Location from 'expo-location';
 import * as Clipboard from 'expo-clipboard';
@@ -30,10 +32,10 @@ interface ObjectValue {
   [key: string]: string;
 }
 
-const DraggableItem = ({ 
-  item, 
-  index, 
-  onUpdate, 
+const DraggableItem = ({
+  item,
+  index,
+  onUpdate,
   onRemove,
   onMoveUp,
   onMoveDown,
@@ -43,7 +45,8 @@ const DraggableItem = ({
   isFirst,
   isLast,
   isReordering,
-}: { 
+  theme,
+}: {
   item: string;
   index: number;
   onUpdate: (index: number, value: string) => void;
@@ -56,9 +59,10 @@ const DraggableItem = ({
   isFirst: boolean;
   isLast: boolean;
   isReordering: boolean;
+  theme: Theme;
 }) => {
   return (
-    <View style={styles.arrayItem}>
+    <View style={[styles.arrayItem, { backgroundColor: theme.cardBackground }]}>
       {isReordering && (
         <View style={styles.reorderButtons}>
           <TouchableOpacity
@@ -66,10 +70,10 @@ const DraggableItem = ({
             disabled={isFirst}
             style={[styles.reorderButton, isFirst && styles.disabledButton]}
           >
-            <Ionicons 
-              name="chevron-up" 
-              size={20} 
-              color={isFirst ? "#ccc" : "#6c757d"} 
+            <Ionicons
+              name="chevron-up"
+              size={20}
+              color={isFirst ? theme.border : theme.secondaryText}
             />
           </TouchableOpacity>
           <TouchableOpacity
@@ -77,19 +81,28 @@ const DraggableItem = ({
             disabled={isLast}
             style={[styles.reorderButton, isLast && styles.disabledButton]}
           >
-            <Ionicons 
-              name="chevron-down" 
-              size={20} 
-              color={isLast ? "#ccc" : "#6c757d"} 
+            <Ionicons
+              name="chevron-down"
+              size={20}
+              color={isLast ? theme.border : theme.secondaryText}
             />
           </TouchableOpacity>
         </View>
       )}
       <TextInput
-        style={[styles.arrayInput, !isReordering && styles.arrayInputFull]}
+        style={[
+          styles.arrayInput,
+          !isReordering && styles.arrayInputFull,
+          {
+            backgroundColor: theme.inputBackground,
+            borderColor: theme.border,
+            color: theme.text,
+          },
+        ]}
         value={item}
         onChangeText={(text) => onUpdate(index, text)}
         placeholder={placeholder}
+        placeholderTextColor={theme.secondaryText}
         multiline={multiline}
         autoFocus={autoFocus}
       />
@@ -97,17 +110,15 @@ const DraggableItem = ({
         onPress={() => onRemove(index)}
         style={styles.removeButton}
       >
-        <Ionicons
-          name="remove-circle-outline"
-          size={24}
-          color="#dc3545"
-        />
+        <Ionicons name="remove-circle-outline" size={24} color={theme.error} />
       </TouchableOpacity>
     </View>
   );
 };
 
 export default function EditScreen() {
+  const colorScheme = useColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
   const { data, updateData, refresh } = useNowPage();
   const router = useRouter();
   const navigation = useNavigation();
@@ -173,14 +184,14 @@ export default function EditScreen() {
             } catch (err) {
               Alert.alert(
                 'Error',
-                'Failed to delete the field. Please try again.'
+                'Failed to delete the field. Please try again.',
               );
             } finally {
               setIsDeleting(false);
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -192,7 +203,9 @@ export default function EditScreen() {
           onPress={() => router.back()}
           style={styles.headerButton}
         >
-          <Text style={styles.headerButtonText}>Cancel</Text>
+          <Text style={[styles.headerButtonText, { color: theme.tint }]}>
+            Cancel
+          </Text>
         </TouchableOpacity>
       ),
       headerRight: () => (
@@ -204,9 +217,9 @@ export default function EditScreen() {
               disabled={isDeleting}
             >
               {isDeleting ? (
-                <ActivityIndicator size="small" color="#dc3545" />
+                <ActivityIndicator size="small" color={theme.error} />
               ) : (
-                <Ionicons name="trash-outline" size={24} color="#dc3545" />
+                <Ionicons name="trash-outline" size={24} color={theme.error} />
               )}
             </TouchableOpacity>
           )}
@@ -216,9 +229,15 @@ export default function EditScreen() {
             disabled={isSaving}
           >
             {isSaving ? (
-              <ActivityIndicator size="small" color="#007AFF" />
+              <ActivityIndicator size="small" color={theme.tint} />
             ) : (
-              <Text style={[styles.headerButtonText, styles.headerSaveText]}>
+              <Text
+                style={[
+                  styles.headerButtonText,
+                  styles.headerSaveText,
+                  { color: theme.tint },
+                ]}
+              >
                 Save
               </Text>
             )}
@@ -229,10 +248,10 @@ export default function EditScreen() {
         isNew === 'true'
           ? 'New Field'
           : section
-          ? section.charAt(0).toUpperCase() + section.slice(1)
-          : 'Edit',
+            ? section.charAt(0).toUpperCase() + section.slice(1)
+            : 'Edit',
     });
-  }, [navigation, value, isSaving, isDeleting]);
+  }, [navigation, value, isSaving, isDeleting, theme]);
 
   useEffect(() => {
     if (newItemIndex !== null) {
@@ -289,13 +308,13 @@ export default function EditScreen() {
 
   const handleUpdateArrayItem = (index: number, newValue: string) => {
     setValue((prev: string[]) =>
-      prev.map((item: string, i: number) => (i === index ? newValue : item))
+      prev.map((item: string, i: number) => (i === index ? newValue : item)),
     );
   };
 
   const handleRemoveArrayItem = (index: number) => {
     setValue((prev: string[]) =>
-      prev.filter((_: any, i: number) => i !== index)
+      prev.filter((_: any, i: number) => i !== index),
     );
   };
 
@@ -335,7 +354,7 @@ export default function EditScreen() {
       if (status !== 'granted') {
         Alert.alert(
           'Permission Denied',
-          'Location permission is required to get your current location.'
+          'Location permission is required to get your current location.',
         );
         return;
       }
@@ -359,7 +378,7 @@ export default function EditScreen() {
     } catch (error) {
       Alert.alert(
         'Error',
-        'Failed to get your current location. Please try again.'
+        'Failed to get your current location. Please try again.',
       );
     } finally {
       setIsGettingLocation(false);
@@ -370,7 +389,10 @@ export default function EditScreen() {
     if (index === 0) return;
     setValue((prev: string[]) => {
       const newArray = [...prev];
-      [newArray[index - 1], newArray[index]] = [newArray[index], newArray[index - 1]];
+      [newArray[index - 1], newArray[index]] = [
+        newArray[index],
+        newArray[index - 1],
+      ];
       return newArray;
     });
   };
@@ -379,20 +401,32 @@ export default function EditScreen() {
     setValue((prev: string[]) => {
       if (index === prev.length - 1) return prev;
       const newArray = [...prev];
-      [newArray[index], newArray[index + 1]] = [newArray[index + 1], newArray[index]];
+      [newArray[index], newArray[index + 1]] = [
+        newArray[index + 1],
+        newArray[index],
+      ];
       return newArray;
     });
   };
 
   if (!section) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.error}>No section selected</Text>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <Text style={[styles.error, { color: theme.error }]}>
+          No section selected
+        </Text>
       </View>
     );
   }
 
-  const isMarkdownField = ['string', 'array', 'status', 'activities', 'plans', 'projects'].includes(String(fieldType || section));
+  const isMarkdownField = [
+    'string',
+    'array',
+    'status',
+    'activities',
+    'plans',
+    'projects',
+  ].includes(String(fieldType || section));
 
   const renderField = () => {
     // For new fields, use the fieldType parameter
@@ -401,10 +435,18 @@ export default function EditScreen() {
         case 'string':
           return (
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: theme.inputBackground,
+                  borderColor: theme.border,
+                  color: theme.text,
+                },
+              ]}
               value={value || ''}
               onChangeText={setValue}
               placeholder={getPlaceholder(section)}
+              placeholderTextColor={theme.secondaryText}
               autoFocus
             />
           );
@@ -428,16 +470,19 @@ export default function EditScreen() {
                     isFirst={index === 0}
                     isLast={index === items.length - 1}
                     isReordering={isReordering}
+                    theme={theme}
                   />
                 ))
               ) : (
-                <Text style={styles.emptyText}>
+                <Text
+                  style={[styles.emptyText, { color: theme.secondaryText }]}
+                >
                   No items yet. Add one below!
                 </Text>
               )}
               <View style={styles.buttonContainer}>
                 <TouchableOpacity
-                  style={styles.addButton}
+                  style={[styles.addButton, { backgroundColor: theme.tint }]}
                   onPress={handleAddArrayItem}
                 >
                   <Text style={styles.addButtonText}>Add Item</Text>
@@ -451,9 +496,20 @@ export default function EditScreen() {
             <>
               {Object.entries(value || {}).map(([key, val]) => (
                 <View key={key} style={styles.objectItem}>
-                  <Text style={styles.objectKey}>{key}:</Text>
+                  <Text
+                    style={[styles.objectKey, { color: theme.secondaryText }]}
+                  >
+                    {key}:
+                  </Text>
                   <TextInput
-                    style={styles.objectValue}
+                    style={[
+                      styles.objectValue,
+                      {
+                        backgroundColor: theme.inputBackground,
+                        borderColor: theme.border,
+                        color: theme.text,
+                      },
+                    ]}
                     value={String(val || '')}
                     onChangeText={(text) =>
                       setValue((prev: ObjectValue) => ({
@@ -462,6 +518,7 @@ export default function EditScreen() {
                       }))
                     }
                     placeholder={`Enter value for ${key}`}
+                    placeholderTextColor={theme.secondaryText}
                     autoFocus={key === newKey}
                     onFocus={() => {
                       if (key === newKey) {
@@ -473,14 +530,27 @@ export default function EditScreen() {
               ))}
               <View style={styles.objectKeyInput}>
                 <TextInput
-                  style={[styles.input, styles.keyInput]}
+                  style={[
+                    styles.input,
+                    styles.keyInput,
+                    {
+                      backgroundColor: theme.inputBackground,
+                      borderColor: theme.border,
+                      color: theme.text,
+                    },
+                  ]}
                   value={objectKey}
                   onChangeText={setObjectKey}
                   placeholder="Enter key name"
+                  placeholderTextColor={theme.secondaryText}
                   autoFocus
                 />
                 <TouchableOpacity
-                  style={[styles.addButton, styles.addKeyButton]}
+                  style={[
+                    styles.addButton,
+                    styles.addKeyButton,
+                    { backgroundColor: theme.tint },
+                  ]}
                   onPress={handleAddObjectKey}
                 >
                   <Text style={styles.addButtonText}>Add Key</Text>
@@ -496,10 +566,18 @@ export default function EditScreen() {
       case 'status':
         return (
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                backgroundColor: theme.inputBackground,
+                borderColor: theme.border,
+                color: theme.text,
+              },
+            ]}
             value={value || ''}
             onChangeText={setValue}
             placeholder={getPlaceholder(section)}
+            placeholderTextColor={theme.secondaryText}
             multiline={section === 'status'}
             autoFocus
           />
@@ -509,21 +587,33 @@ export default function EditScreen() {
         return (
           <View style={styles.locationContainer}>
             <TextInput
-              style={[styles.input, styles.locationInput]}
+              style={[
+                styles.input,
+                styles.locationInput,
+                {
+                  backgroundColor: theme.inputBackground,
+                  borderColor: theme.border,
+                  color: theme.text,
+                },
+              ]}
               value={value || ''}
               onChangeText={setValue}
               placeholder={getPlaceholder(section)}
+              placeholderTextColor={theme.secondaryText}
               autoFocus
             />
             <TouchableOpacity
-              style={styles.locationButton}
+              style={[
+                styles.locationButton,
+                { backgroundColor: theme.inputBackground },
+              ]}
               onPress={getCurrentLocation}
               disabled={isGettingLocation}
             >
               {isGettingLocation ? (
-                <ActivityIndicator size="small" color="#007AFF" />
+                <ActivityIndicator size="small" color={theme.tint} />
               ) : (
-                <Ionicons name="location" size={24} color="#007AFF" />
+                <Ionicons name="location" size={24} color={theme.tint} />
               )}
             </TouchableOpacity>
           </View>
@@ -533,7 +623,14 @@ export default function EditScreen() {
         return (
           <>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: theme.inputBackground,
+                  borderColor: theme.border,
+                  color: theme.text,
+                },
+              ]}
               value={value?.name || ''}
               onChangeText={(text) =>
                 setValue((prev: PlaylistValue) => ({
@@ -542,11 +639,20 @@ export default function EditScreen() {
                 }))
               }
               placeholder="What are you listening to?"
+              placeholderTextColor={theme.secondaryText}
               autoFocus
             />
             <View style={styles.playlistUriContainer}>
               <TextInput
-                style={[styles.input, styles.uriInput]}
+                style={[
+                  styles.input,
+                  styles.uriInput,
+                  {
+                    backgroundColor: theme.inputBackground,
+                    borderColor: theme.border,
+                    color: theme.text,
+                  },
+                ]}
                 value={value?.uri || ''}
                 onChangeText={(text) =>
                   setValue((prev: PlaylistValue) => ({
@@ -555,21 +661,29 @@ export default function EditScreen() {
                   }))
                 }
                 placeholder="Add the Spotify URI (optional)"
+                placeholderTextColor={theme.secondaryText}
               />
               <TouchableOpacity
-                style={styles.clipboardButton}
+                style={[
+                  styles.clipboardButton,
+                  { backgroundColor: theme.inputBackground },
+                ]}
                 onPress={async () => {
                   try {
                     const text = await Clipboard.getStringAsync();
                     // Extract playlist ID from various Spotify URL formats
-                    const match = text.match(/spotify:playlist:([a-zA-Z0-9]+)|open\.spotify\.com\/playlist\/([a-zA-Z0-9]+)/);
+                    const match = text.match(
+                      /spotify:playlist:([a-zA-Z0-9]+)|open\.spotify\.com\/playlist\/([a-zA-Z0-9]+)/,
+                    );
                     if (match) {
                       const playlistId = match[1] || match[2];
                       try {
                         // Use a CORS proxy to fetch the playlist page
-                        const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(`https://open.spotify.com/playlist/${playlistId}`)}`);
+                        const response = await fetch(
+                          `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://open.spotify.com/playlist/${playlistId}`)}`,
+                        );
                         const html = await response.text();
-                        
+
                         // Extract the playlist name from the embed data
                         const nameMatch = html.match(/"name":"(.*?)"/);
                         if (nameMatch) {
@@ -594,15 +708,44 @@ export default function EditScreen() {
                         }));
                       }
                     } else {
-                      Alert.alert('Error', 'No valid Spotify playlist URL found in clipboard');
+                      Alert.alert(
+                        'Error',
+                        'No valid Spotify playlist URL found in clipboard',
+                      );
                     }
                   } catch (error) {
                     Alert.alert('Error', 'Failed to read from clipboard');
                   }
                 }}
               >
-                <Ionicons name="clipboard-outline" size={24} color="#007AFF" />
+                <Ionicons
+                  name="clipboard-outline"
+                  size={24}
+                  color={theme.tint}
+                />
               </TouchableOpacity>
+            </View>
+            <View style={styles.playlistUriContainer}>
+              <TextInput
+                style={[
+                  styles.input,
+                  styles.uriInput,
+                  {
+                    backgroundColor: theme.inputBackground,
+                    borderColor: theme.border,
+                    color: theme.text,
+                  },
+                ]}
+                value={value?.url || ''}
+                onChangeText={(text) =>
+                  setValue((prev: PlaylistValue) => ({
+                    ...prev,
+                    url: text,
+                  }))
+                }
+                placeholder="Optional URL"
+                placeholderTextColor={theme.secondaryText}
+              />
             </View>
           </>
         );
@@ -629,23 +772,24 @@ export default function EditScreen() {
                   isFirst={index === 0}
                   isLast={index === items.length - 1}
                   isReordering={isReordering}
+                  theme={theme}
                 />
               ))
             ) : (
-              <Text style={styles.emptyText}>
+              <Text style={[styles.emptyText, { color: theme.secondaryText }]}>
                 No {section} yet. Add one below!
               </Text>
             )}
             <View style={styles.buttonContainer}>
               <TouchableOpacity
-                style={styles.addButton}
+                style={[styles.addButton, { backgroundColor: theme.tint }]}
                 onPress={handleAddArrayItem}
               >
                 <Text style={styles.addButtonText}>Add Item</Text>
               </TouchableOpacity>
               {items.length > 1 && (
                 <TouchableOpacity
-                  style={[styles.addButton]}
+                  style={[styles.addButton, { backgroundColor: theme.tint }]}
                   onPress={() => setIsReordering(!isReordering)}
                 >
                   <Text style={styles.addButtonText}>
@@ -677,23 +821,26 @@ export default function EditScreen() {
                     isFirst={index === 0}
                     isLast={index === items.length - 1}
                     isReordering={isReordering}
+                    theme={theme}
                   />
                 ))
               ) : (
-                <Text style={styles.emptyText}>
+                <Text
+                  style={[styles.emptyText, { color: theme.secondaryText }]}
+                >
                   No items yet. Add one below!
                 </Text>
               )}
               <View style={styles.buttonContainer}>
                 <TouchableOpacity
-                  style={styles.addButton}
+                  style={[styles.addButton, { backgroundColor: theme.tint }]}
                   onPress={handleAddArrayItem}
                 >
                   <Text style={styles.addButtonText}>Add Item</Text>
                 </TouchableOpacity>
                 {items.length > 1 && (
                   <TouchableOpacity
-                    style={[styles.addButton]}
+                    style={[styles.addButton, { backgroundColor: theme.tint }]}
                     onPress={() => setIsReordering(!isReordering)}
                   >
                     <Text style={styles.addButtonText}>
@@ -709,9 +856,20 @@ export default function EditScreen() {
             <>
               {Object.entries(value).map(([key, val]) => (
                 <View key={key} style={styles.objectItem}>
-                  <Text style={styles.objectKey}>{key}:</Text>
+                  <Text
+                    style={[styles.objectKey, { color: theme.secondaryText }]}
+                  >
+                    {key}:
+                  </Text>
                   <TextInput
-                    style={styles.objectValue}
+                    style={[
+                      styles.objectValue,
+                      {
+                        backgroundColor: theme.inputBackground,
+                        borderColor: theme.border,
+                        color: theme.text,
+                      },
+                    ]}
                     value={String(val || '')}
                     onChangeText={(text) =>
                       setValue((prev: ObjectValue) => ({
@@ -720,6 +878,7 @@ export default function EditScreen() {
                       }))
                     }
                     placeholder={`Enter value for ${key}`}
+                    placeholderTextColor={theme.secondaryText}
                     autoFocus={key === newKey}
                     onFocus={() => {
                       if (key === newKey) {
@@ -731,14 +890,27 @@ export default function EditScreen() {
               ))}
               <View style={styles.objectKeyInput}>
                 <TextInput
-                  style={[styles.input, styles.keyInput]}
+                  style={[
+                    styles.input,
+                    styles.keyInput,
+                    {
+                      backgroundColor: theme.inputBackground,
+                      borderColor: theme.border,
+                      color: theme.text,
+                    },
+                  ]}
                   value={objectKey}
                   onChangeText={setObjectKey}
                   placeholder="Enter key name"
+                  placeholderTextColor={theme.secondaryText}
                   autoFocus
                 />
                 <TouchableOpacity
-                  style={[styles.addButton, styles.addKeyButton]}
+                  style={[
+                    styles.addButton,
+                    styles.addKeyButton,
+                    { backgroundColor: theme.tint },
+                  ]}
                   onPress={handleAddObjectKey}
                 >
                   <Text style={styles.addButtonText}>Add Key</Text>
@@ -749,10 +921,18 @@ export default function EditScreen() {
         } else {
           return (
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: theme.inputBackground,
+                  borderColor: theme.border,
+                  color: theme.text,
+                },
+              ]}
               value={String(value || '')}
               onChangeText={setValue}
               placeholder={getPlaceholder(section)}
+              placeholderTextColor={theme.secondaryText}
               autoFocus
             />
           );
@@ -761,19 +941,31 @@ export default function EditScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.background }]}
     >
-      <ScrollView 
-        style={styles.container}
+      <ScrollView
+        style={[styles.container, { backgroundColor: theme.background }]}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.content}>
-          <View style={styles.section}>{renderField()}</View>
+          <View
+            style={[
+              styles.section,
+              {
+                backgroundColor: theme.cardBackground,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            {renderField()}
+          </View>
           {isMarkdownField && (
-            <Text style={styles.hint}>Markdown formatting supported.</Text>
+            <Text style={[styles.hint, { color: theme.secondaryText }]}>
+              Markdown formatting supported.
+            </Text>
           )}
         </View>
       </ScrollView>
@@ -784,7 +976,6 @@ export default function EditScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   scrollContent: {
     flexGrow: 1,
@@ -793,7 +984,6 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   section: {
-    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
@@ -805,10 +995,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
+    borderWidth: Platform.OS === 'ios' ? 0 : 1,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#e5e5e5',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
@@ -821,14 +1011,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
-    backgroundColor: '#fff',
     borderRadius: 8,
     padding: 8,
   },
   arrayInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#e5e5e5',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
@@ -838,7 +1026,6 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   addButton: {
-    backgroundColor: '#007AFF',
     borderRadius: 8,
     padding: 12,
     alignItems: 'center',
@@ -851,7 +1038,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   error: {
-    color: '#dc3545',
     textAlign: 'center',
     marginTop: 20,
   },
@@ -859,7 +1045,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   headerButtonText: {
-    color: '#007AFF',
     fontSize: 17,
     fontWeight: '400',
   },
@@ -868,7 +1053,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     textAlign: 'center',
-    color: '#6c757d',
     marginBottom: 16,
     fontSize: 16,
   },
@@ -893,12 +1077,10 @@ const styles = StyleSheet.create({
   objectKey: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#6c757d',
     marginBottom: 4,
   },
   objectValue: {
     borderWidth: 1,
-    borderColor: '#e5e5e5',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
@@ -922,7 +1104,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     padding: 8,
     borderRadius: 8,
-    backgroundColor: '#f0f0f0',
   },
   dragHandle: {
     padding: 8,
@@ -966,6 +1147,7 @@ const styles = StyleSheet.create({
   playlistUriContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 8,
   },
   uriInput: {
     flex: 1,
@@ -975,6 +1157,5 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     padding: 8,
     borderRadius: 8,
-    backgroundColor: '#f0f0f0',
   },
 });

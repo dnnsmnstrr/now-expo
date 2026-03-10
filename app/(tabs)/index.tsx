@@ -1,12 +1,15 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator, Button, Platform, Linking } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator, Button, Platform, Linking, useColorScheme } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useNowPage } from '../../hooks/NowContext';
 import { useGistContext } from '../../hooks/GistContext';
 import { Ionicons } from '@expo/vector-icons';
 import Markdown from 'react-native-markdown-display';
+import { Colors, Theme } from '../../constants/Colors';
 
 export default function NowScreen() {
+  const colorScheme = useColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
   const { data, loading, error, refresh } = useNowPage();
   const { currentGistId } = useGistContext();
   const router = useRouter();
@@ -41,70 +44,72 @@ export default function NowScreen() {
 
   if (!currentGistId) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.error}>No ID selected. Please go to settings to select an ID.</Text>
-        <Button title="Go to Settings" onPress={() => router.push('/settings')} />
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <Text style={[styles.error, { color: theme.error }]}>No ID selected. Please go to settings to select an ID.</Text>
+        <Button title="Go to Settings" onPress={() => router.push('/settings')} color={theme.tint} />
       </View>
     );
   }
   
   if (loading && !refreshing) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#007AFF" />
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.tint} />
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.error}>{error}</Text>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <Text style={[styles.error, { color: theme.error }]}>{error}</Text>
       </View>
     );
   }
 
+  const markdownStyles = getMarkdownStyles(theme);
+
   return (
     <ScrollView 
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.background }]}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          tintColor="#007AFF"
-          colors={["#007AFF"]}
+          tintColor={theme.refreshControl}
+          colors={[theme.refreshControl]}
         />
       }
     > 
       <View style={styles.content}>
         {data?.status && (
-          <TouchableOpacity onPress={() => navigateToEdit('status', data.status)} style={styles.section}>
+          <TouchableOpacity onPress={() => navigateToEdit('status', data.status)} style={[styles.section, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="information-circle-outline" size={24} color="#007AFF" />
-              <Text style={styles.sectionTitle}>Status</Text>
+              <Ionicons name="information-circle-outline" size={24} color={theme.tint} />
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>Status</Text>
             </View>
             <Markdown style={markdownStyles}>{data.status}</Markdown>
           </TouchableOpacity>
         )}
 
         {data?.location && (
-          <TouchableOpacity onPress={() => navigateToEdit('location', data.location)} style={styles.section}>
+          <TouchableOpacity onPress={() => navigateToEdit('location', data.location)} style={[styles.section, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="location-outline" size={24} color="#007AFF" />
-              <Text style={styles.sectionTitle}>Location</Text>
+              <Ionicons name="location-outline" size={24} color={theme.tint} />
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>Location</Text>
             </View>
-            <Text style={styles.text}>{data.location}</Text>
+            <Text style={[styles.text, { color: theme.secondaryText }]}>{data.location}</Text>
           </TouchableOpacity>
         )}
 
         {data?.playlist && (
-          <TouchableOpacity onPress={() => navigateToEdit('playlist', data.playlist)} style={styles.section}>
+          <TouchableOpacity onPress={() => navigateToEdit('playlist', data.playlist)} style={[styles.section, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="musical-notes-outline" size={24} color="#007AFF" />
-              <Text style={styles.sectionTitle}>Current Playlist</Text>
+              <Ionicons name="musical-notes-outline" size={24} color={theme.tint} />
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>Current Playlist</Text>
             </View>
             <View style={styles.playlistContainer}>
-              <Text style={styles.text}>{data.playlist?.name}</Text>
+              <Text style={[styles.text, { color: theme.secondaryText }]}>{data.playlist?.name}</Text>
               {data.playlist?.uri && (
                 <TouchableOpacity 
                   onPress={() => Linking.openURL(`https://open.spotify.com/playlist/${data.playlist.uri}`)}
@@ -118,10 +123,10 @@ export default function NowScreen() {
         )}
 
         {data?.activities && data.activities.length > 0 && (
-          <TouchableOpacity onPress={() => navigateToEdit('activities', data.activities)} style={styles.section}>
+          <TouchableOpacity onPress={() => navigateToEdit('activities', data.activities)} style={[styles.section, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="checkmark-circle-outline" size={24} color="#007AFF" />
-              <Text style={styles.sectionTitle}>Recent Activities</Text>
+              <Ionicons name="checkmark-circle-outline" size={24} color={theme.tint} />
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>Recent Activities</Text>
             </View>
             <Markdown style={markdownStyles}>
               {data.activities.map((activity, index) => `- ${activity}`).join('\n')}
@@ -130,10 +135,10 @@ export default function NowScreen() {
         )}
 
         {data?.plans && data.plans.length > 0 && (
-          <TouchableOpacity onPress={() => navigateToEdit('plans', data.plans)} style={styles.section}>
+          <TouchableOpacity onPress={() => navigateToEdit('plans', data.plans)} style={[styles.section, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="calendar-outline" size={24} color="#007AFF" />
-              <Text style={styles.sectionTitle}>Upcoming Plans</Text>
+              <Ionicons name="calendar-outline" size={24} color={theme.tint} />
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>Upcoming Plans</Text>
             </View>
             <Markdown style={markdownStyles}>
               {data.plans.map((plan, index) => `- ${plan}`).join('\n')}
@@ -142,10 +147,10 @@ export default function NowScreen() {
         )}
 
         {data?.projects && data.projects.length > 0 && (
-          <TouchableOpacity onPress={() => navigateToEdit('projects', data.projects)} style={styles.section}>
+          <TouchableOpacity onPress={() => navigateToEdit('projects', data.projects)} style={[styles.section, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="construct-outline" size={24} color="#007AFF" />
-              <Text style={styles.sectionTitle}>Projects</Text>
+              <Ionicons name="construct-outline" size={24} color={theme.tint} />
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>Projects</Text>
             </View>
             <Markdown style={markdownStyles}>
               {data.projects.map((project, index) => `- ${project}`).join('\n')}
@@ -155,7 +160,8 @@ export default function NowScreen() {
 
         {/* Render custom fields */}
         {Object.entries(data || {}).map(([key, value]) => {
-          if (!['updatedAt', 'status', 'playlist', 'activities', 'plans', 'projects', 'location'].includes(key)) {
+          const schemaKey = '$schema'
+          if (![schemaKey, 'updatedAt', 'status', 'playlist', 'activities', 'plans', 'projects', 'location'].includes(key)) {
             // Capitalize the first letter of each word in the key
             const capitalizedKey = key
               .split(' ')
@@ -163,10 +169,10 @@ export default function NowScreen() {
               .join(' ');
 
             return (
-              <TouchableOpacity key={key} onPress={() => navigateToEdit(key, value)} style={styles.section}>
+              <TouchableOpacity key={key} onPress={() => navigateToEdit(key, value)} style={[styles.section, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
                 <View style={styles.sectionHeader}>
-                  <Ionicons name="add-circle-outline" size={24} color="#007AFF" />
-                  <Text style={styles.sectionTitle}>{capitalizedKey}</Text>
+                  <Ionicons name="add-circle-outline" size={24} color={theme.tint} />
+                  <Text style={[styles.sectionTitle, { color: theme.text }]}>{capitalizedKey}</Text>
                 </View>
                 {Array.isArray(value) ? (
                   <Markdown style={markdownStyles}>
@@ -187,10 +193,10 @@ export default function NowScreen() {
           return null;
         })}
 
-        <TouchableOpacity onPress={addNewField} style={styles.addButton}>
+        <TouchableOpacity onPress={addNewField} style={[styles.addButton, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
           <View style={styles.addButtonContent}>
-            <Ionicons name="add-circle-outline" size={20} color="#007AFF" />
-            <Text style={styles.addButtonText}>Add New Field</Text>
+            <Ionicons name="add-circle-outline" size={20} color={theme.tint} />
+            <Text style={[styles.addButtonText, { color: theme.tint }]}>Add New Field</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -201,13 +207,11 @@ export default function NowScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   content: {
     padding: 16,
   },
   section: {
-    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
@@ -219,6 +223,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
+    borderWidth: Platform.OS === 'ios' ? 0 : 1,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -229,32 +234,27 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginLeft: 8,
-    color: '#1a1a1a',
   },
   text: {
     fontSize: 16,
     lineHeight: 24,
-    color: '#4a4a4a',
   },
   listItem: {
     fontSize: 16,
     lineHeight: 24,
     marginBottom: 8,
-    color: '#4a4a4a',
   },
   error: {
-    color: '#dc3545',
     textAlign: 'center',
     marginTop: 20,
     marginBottom: 20,
   },
   addButton: {
-    backgroundColor: '#fff',
     borderRadius: 8,
     padding: 12,
     marginTop: 8,
     borderWidth: 1,
-    borderColor: '#e1e1e1',
+    marginBottom: 8
   },
   addButtonContent: {
     flexDirection: 'row',
@@ -277,37 +277,32 @@ const styles = StyleSheet.create({
   },
 });
 
-const markdownStyles = {
+const getMarkdownStyles = (theme: Theme) => ({
   body: {
-    color: '#4a4a4a',
+    color: theme.secondaryText,
     fontSize: 16,
     lineHeight: 24,
   },
-  // paragraph: {
-  //   color: '#4a4a4a',
-  //   fontSize: 16,
-  //   lineHeight: 24,
-  // },
   heading1: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: 'bold' as const,
     marginBottom: 16,
-    color: '#1a1a1a',
+    color: theme.text,
   },
   heading2: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: 'bold' as const,
     marginBottom: 12,
-    color: '#1a1a1a',
+    color: theme.text,
   },
   heading3: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: 'bold' as const,
     marginBottom: 8,
-    color: '#1a1a1a',
+    color: theme.text,
   },
   link: {
-    color: '#007AFF',
+    color: theme.tint,
   },
   list_item: {
     marginBottom: 8,
@@ -319,23 +314,25 @@ const markdownStyles = {
     marginBottom: 16,
   },
   code_inline: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: theme.codeBackground,
     padding: 4,
     borderRadius: 4,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    color: theme.text,
   },
   code_block: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: theme.codeBackground,
     padding: 16,
     borderRadius: 8,
     marginBottom: 16,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    color: theme.text,
   },
   blockquote: {
     borderLeftWidth: 4,
-    borderLeftColor: '#e0e0e0',
+    borderLeftColor: theme.blockquoteBorder,
     paddingLeft: 16,
     marginLeft: 0,
     marginBottom: 16,
   },
-};
+});

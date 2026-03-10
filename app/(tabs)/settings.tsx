@@ -10,12 +10,15 @@ import {
   ActivityIndicator,
   Modal,
   ScrollView,
+  useColorScheme,
+  Platform,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useGistContext } from '../../hooks/GistContext';
 import { useAuth } from '../../hooks/useAuth';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { Colors } from '../../constants/Colors';
 
 interface GistMenuProps {
   gistId: string;
@@ -36,6 +39,9 @@ function GistMenu({
   onDelete,
   onOpenInBrowser,
 }: GistMenuProps) {
+  const colorScheme = useColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+
   return (
     <Modal
       visible={isVisible}
@@ -44,11 +50,11 @@ function GistMenu({
       onRequestClose={onClose}
     >
       <TouchableOpacity
-        style={styles.modalOverlay}
+        style={[styles.modalOverlay, { backgroundColor: theme.modalOverlay }]}
         activeOpacity={1}
         onPress={onClose}
       >
-        <View style={styles.menuContainer}>
+        <View style={[styles.menuContainer, { backgroundColor: theme.cardBackground }]}>
           <TouchableOpacity
             style={styles.menuItem}
             onPress={() => {
@@ -56,10 +62,10 @@ function GistMenu({
               onClose();
             }}
           >
-            <Ionicons name="open-outline" size={24} color="#007AFF" />
-            <Text style={styles.menuText}>Open in Browser</Text>
+            <Ionicons name="open-outline" size={24} color={theme.tint} />
+            <Text style={[styles.menuText, { color: theme.tint }]}>Open in Browser</Text>
           </TouchableOpacity>
-          <View style={styles.menuSeparator} />
+          <View style={[styles.menuSeparator, { backgroundColor: theme.border }]} />
           <TouchableOpacity
             style={styles.menuItem}
             onPress={async () => {
@@ -68,10 +74,10 @@ function GistMenu({
               onClose();
             }}
           >
-            <Ionicons name="copy-outline" size={24} color="#007AFF" />
-            <Text style={styles.menuText}>Copy Gist ID</Text>
+            <Ionicons name="copy-outline" size={24} color={theme.tint} />
+            <Text style={[styles.menuText, { color: theme.tint }]}>Copy Gist ID</Text>
           </TouchableOpacity>
-          <View style={styles.menuSeparator} />
+          <View style={[styles.menuSeparator, { backgroundColor: theme.border }]} />
           <TouchableOpacity
             style={styles.menuItem}
             onPress={() => {
@@ -79,10 +85,10 @@ function GistMenu({
               onClose();
             }}
           >
-            <Ionicons name="pencil-outline" size={24} color="#007AFF" />
-            <Text style={styles.menuText}>Rename Gist</Text>
+            <Ionicons name="pencil-outline" size={24} color={theme.tint} />
+            <Text style={[styles.menuText, { color: theme.tint }]}>Rename Gist</Text>
           </TouchableOpacity>
-          <View style={styles.menuSeparator} />
+          <View style={[styles.menuSeparator, { backgroundColor: theme.border }]} />
           <TouchableOpacity
             style={styles.menuItem}
             onPress={() => {
@@ -90,10 +96,10 @@ function GistMenu({
               onClose();
             }}
           >
-            <Ionicons name="copy" size={24} color="#007AFF" />
-            <Text style={styles.menuText}>Clone Gist</Text>
+            <Ionicons name="copy" size={24} color={theme.tint} />
+            <Text style={[styles.menuText, { color: theme.tint }]}>Clone Gist</Text>
           </TouchableOpacity>
-          <View style={styles.menuSeparator} />
+          <View style={[styles.menuSeparator, { backgroundColor: theme.border }]} />
           <TouchableOpacity
             style={[styles.menuItem, styles.deleteMenuItem]}
             onPress={() => {
@@ -101,8 +107,8 @@ function GistMenu({
               onClose();
             }}
           >
-            <Ionicons name="trash-outline" size={24} color="#dc3545" />
-            <Text style={styles.deleteMenuText}>Delete Gist</Text>
+            <Ionicons name="trash-outline" size={24} color={theme.error} />
+            <Text style={[styles.deleteMenuText, { color: theme.error }]}>Delete Gist</Text>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -125,7 +131,8 @@ function RenameModal({
   currentName,
   gistId,
 }: RenameModalProps) {
-  console.log(currentName);
+  const colorScheme = useColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
   const [newName, setNewName] = useState(currentName);
 
   useEffect(() => {
@@ -139,29 +146,30 @@ function RenameModal({
       onRequestClose={onClose}
     >
       <TouchableOpacity
-        style={styles.modalOverlay}
+        style={[styles.modalOverlay, { backgroundColor: theme.modalOverlay }]}
         activeOpacity={1}
         onPress={onClose}
       >
-        <View style={[styles.menuContainer, styles.renameContainer]}>
-          <Text style={styles.renameTitle}>Rename Gist</Text>
+        <View style={[styles.menuContainer, styles.renameContainer, { backgroundColor: theme.cardBackground }]}>
+          <Text style={[styles.renameTitle, { color: theme.text }]}>Rename Gist</Text>
           <TextInput
-            style={styles.renameInput}
+            style={[styles.renameInput, { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.text }]}
             value={newName}
             onChangeText={setNewName}
             placeholder="Enter new name"
+            placeholderTextColor={theme.secondaryText}
             autoCapitalize="none"
             autoCorrect={false}
           />
           <View style={styles.renameButtons}>
             <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
+              style={[styles.button, styles.cancelButton, { backgroundColor: theme.background }]}
               onPress={onClose}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={[styles.cancelButtonText, { color: theme.secondaryText }]}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, styles.saveButton]}
+              style={[styles.button, styles.saveButton, { backgroundColor: theme.tint }]}
               onPress={() => {
                 onSubmit(newName);
                 onClose();
@@ -177,6 +185,8 @@ function RenameModal({
 }
 
 export default function SettingsScreen() {
+  const colorScheme = useColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
   const { isAuthenticated, login, logout, user, token } = useAuth();
   const {
     currentGistId,
@@ -310,17 +320,17 @@ export default function SettingsScreen() {
     if (loading) {
       return (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <ActivityIndicator size="large" color={theme.tint} />
         </View>
       );
     }
 
     if (error) {
       return (
-        <View style={styles.section}>
-          <Text style={styles.error}>{error}</Text>
+        <View style={[styles.section, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+          <Text style={[styles.error, { color: theme.error }]}>{error}</Text>
           <TouchableOpacity
-            style={[styles.button, styles.retryButton]}
+            style={[styles.button, styles.retryButton, { backgroundColor: theme.secondaryText }]}
             onPress={() => token && fetchGists(token)}
           >
             <Text style={styles.buttonText}>Retry</Text>
@@ -331,13 +341,13 @@ export default function SettingsScreen() {
 
     if (gists.length === 0) {
       return (
-        <View style={styles.section}>
-          <Text style={styles.description}>
+        <View style={[styles.section, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+          <Text style={[styles.description, { color: theme.secondaryText }]}>
             No now.json gist found. Create one to get started with your now
             page.
           </Text>
           <TouchableOpacity
-            style={[styles.button, styles.createButton]}
+            style={[styles.button, styles.createButton, { backgroundColor: theme.tint }]}
             onPress={handleCreateGist}
           >
             <Text style={styles.buttonText}>Create Now Page Gist</Text>
@@ -347,14 +357,15 @@ export default function SettingsScreen() {
     }
 
     return (
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Select Now Page Gist</Text>
+      <View style={[styles.section, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Select Now Page Gist</Text>
         {gists.map((gist) => (
           <TouchableOpacity
             key={gist.id}
             style={[
               styles.gistItem,
-              currentGistId === gist.id && styles.selectedGist,
+              { borderColor: theme.border },
+              currentGistId === gist.id && [styles.selectedGist, { borderColor: theme.tint, backgroundColor: theme.selectedItem }],
             ]}
             onPress={() => handleSelectGist(gist.id)}
           >
@@ -365,13 +376,13 @@ export default function SettingsScreen() {
                   : 'radio-button-off'
               }
               size={24}
-              color="#007AFF"
+              color={theme.tint}
             />
             <View style={styles.gistInfo}>
-              <Text style={styles.gistDescription}>
+              <Text style={[styles.gistDescription, { color: theme.text }]}>
                 {gist.description || 'No description'}
               </Text>
-              <Text style={styles.gistId}>ID: {gist.id}</Text>
+              <Text style={[styles.gistId, { color: theme.secondaryText }]}>ID: {gist.id}</Text>
             </View>
             <TouchableOpacity
               style={styles.menuButton}
@@ -380,12 +391,12 @@ export default function SettingsScreen() {
                 showMenu(gist.id);
               }}
             >
-              <Ionicons name="ellipsis-vertical" size={24} color="#6c757d" />
+              <Ionicons name="ellipsis-vertical" size={24} color={theme.secondaryText} />
             </TouchableOpacity>
           </TouchableOpacity>
         ))}
         <TouchableOpacity
-          style={[styles.button, styles.createButton]}
+          style={[styles.button, styles.createButton, { backgroundColor: theme.tint }]}
           onPress={handleCreateGist}
         >
           <Text style={styles.buttonText}>Create Another Gist</Text>
@@ -396,16 +407,16 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.background }]}
       contentContainerStyle={styles.contentContainer}
     >
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>GitHub Account</Text>
+      <View style={[styles.section, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>GitHub Account</Text>
         {isAuthenticated ? (
           <>
-            <Text style={styles.userInfo}>Logged in as: {user?.login}</Text>
+            <Text style={[styles.userInfo, { color: theme.secondaryText }]}>Logged in as: {user?.login}</Text>
             <TouchableOpacity
-              style={[styles.button, styles.logoutButton]}
+              style={[styles.button, styles.logoutButton, { backgroundColor: theme.error }]}
               onPress={handleLogout}
             >
               <Text style={styles.buttonText}>Logout</Text>
@@ -413,9 +424,9 @@ export default function SettingsScreen() {
           </>
         ) : (
           <View>
-            <Text style={styles.description}>
+            <Text style={[styles.description, { color: theme.secondaryText }]}>
               Enter your GitHub personal access token to manage your now page.
-              The token needs 'gist' scope to read and write your now page data.
+              The token needs &apos;gist&apos; scope to read and write your now page data.
             </Text>
             <TouchableOpacity
               onPress={() =>
@@ -423,19 +434,20 @@ export default function SettingsScreen() {
               }
               style={styles.link}
             >
-              <Text style={styles.linkText}>Create a new token</Text>
+              <Text style={[styles.linkText, { color: theme.tint }]}>Create a new token</Text>
             </TouchableOpacity>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.text }]}
               value={authToken}
               onChangeText={setAuthToken}
               placeholder="Enter GitHub token"
+              placeholderTextColor={theme.secondaryText}
               secureTextEntry
               autoCapitalize="none"
               autoCorrect={false}
             />
             <TouchableOpacity
-              style={[styles.button, styles.loginButton]}
+              style={[styles.button, styles.loginButton, { backgroundColor: theme.success }]}
               onPress={handleLogin}
             >
               <Text style={styles.buttonText}>Login with Token</Text>
@@ -446,11 +458,11 @@ export default function SettingsScreen() {
 
       {isAuthenticated && renderGistSelection()}
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>About</Text>
-        <Text style={styles.description}>
-          This app helps you maintain a "now page" - a place to share what
-          you're currently focused on, your recent activities, and upcoming
+      <View style={[styles.section, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>About</Text>
+        <Text style={[styles.description, { color: theme.secondaryText }]}>
+          This app helps you maintain a &quot;now page&quot; - a place to share what
+          you&apos;re currently focused on, your recent activities, and upcoming
           plans. The data is stored in a GitHub Gist, making it easy to
           integrate with other platforms.
         </Text>
@@ -458,7 +470,7 @@ export default function SettingsScreen() {
           onPress={() => Linking.openURL('https://nownownow.com/about')}
           style={styles.link}
         >
-          <Text style={styles.linkText}>Learn more about now pages</Text>
+          <Text style={[styles.linkText, { color: theme.tint }]}>Learn more about now pages</Text>
         </TouchableOpacity>
       </View>
 
@@ -496,13 +508,11 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   contentContainer: {
     paddingBottom: 16,
   },
   section: {
-    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
     margin: 16,
@@ -515,6 +525,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
+    borderWidth: Platform.OS === 'ios' ? 0 : 1,
   },
   centered: {
     alignItems: 'center',
@@ -525,12 +536,10 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 16,
-    color: '#1a1a1a',
   },
   userInfo: {
     fontSize: 16,
     marginBottom: 16,
-    color: '#4a4a4a',
   },
   button: {
     borderRadius: 8,
@@ -538,18 +547,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loginButton: {
-    backgroundColor: '#2ea44f',
     marginTop: 12,
   },
   logoutButton: {
-    backgroundColor: '#dc3545',
   },
   createButton: {
-    backgroundColor: '#007AFF',
     marginTop: 12,
   },
   retryButton: {
-    backgroundColor: '#6c757d',
     marginTop: 12,
   },
   buttonText: {
@@ -560,26 +565,22 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 16,
     lineHeight: 24,
-    color: '#4a4a4a',
     marginBottom: 16,
   },
   link: {
     padding: 8,
   },
   linkText: {
-    color: '#007AFF',
     fontSize: 16,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#e5e5e5',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
     marginBottom: 8,
   },
   error: {
-    color: '#dc3545',
     fontSize: 16,
     marginBottom: 16,
   },
@@ -588,13 +589,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderWidth: 1,
-    borderColor: '#e5e5e5',
     borderRadius: 8,
     marginBottom: 12,
   },
   selectedGist: {
-    borderColor: '#007AFF',
-    backgroundColor: '#f0f9ff',
   },
   gistInfo: {
     marginLeft: 12,
@@ -602,12 +600,10 @@ const styles = StyleSheet.create({
   },
   gistDescription: {
     fontSize: 16,
-    color: '#1a1a1a',
     marginBottom: 4,
   },
   gistId: {
     fontSize: 14,
-    color: '#6c757d',
   },
   menuButton: {
     padding: 8,
@@ -616,12 +612,10 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   menuContainer: {
-    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 8,
     width: '80%',
@@ -636,11 +630,9 @@ const styles = StyleSheet.create({
   menuText: {
     fontSize: 16,
     marginLeft: 12,
-    color: '#007AFF',
   },
   menuSeparator: {
     height: 1,
-    backgroundColor: '#e5e5e5',
     marginHorizontal: 8,
   },
   deleteMenuItem: {
@@ -650,7 +642,6 @@ const styles = StyleSheet.create({
   deleteMenuText: {
     fontSize: 16,
     marginLeft: 12,
-    color: '#dc3545',
   },
   renameContainer: {
     padding: 16,
@@ -659,11 +650,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 16,
-    color: '#1a1a1a',
   },
   renameInput: {
     borderWidth: 1,
-    borderColor: '#e5e5e5',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
@@ -674,7 +663,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   cancelButton: {
-    backgroundColor: '#f8f9fa',
     marginRight: 8,
   },
   cancelButtonText: {
