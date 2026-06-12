@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
-    borderWidth: Platform.OS === 'ios' ? 0 : 1,
+    borderWidth: 1,
   },
   centered: {
     alignItems: 'center',
@@ -666,11 +666,9 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   cancelButtonText: {
-    color: '#6c757d',
     fontSize: 16,
     fontWeight: '600',
   },
   saveButton: {
-    backgroundColor: '#007AFF',
   },
 });

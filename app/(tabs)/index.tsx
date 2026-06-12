@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
-    borderWidth: Platform.OS === 'ios' ? 0 : 1,
+    borderWidth: 1,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -265,7 +265,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     marginLeft: 8,
-    color: '#007AFF',
   },
   playlistContainer: {
     flexDirection: 'row',
