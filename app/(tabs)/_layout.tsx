@@ -243,6 +243,8 @@ export default function TabLayout() {
               shadowOpacity: 0.25,
               shadowRadius: 3.84,
               elevation: 5,
+              borderWidth: 1,
+              borderColor: theme.border,
               maxWidth: '90%',
               maxHeight: '80%',
               position: 'absolute',
@@ -331,7 +333,7 @@ export default function TabLayout() {
                         <Text
                           style={{
                             fontSize: 12,
-                            color: '#28a745',
+                            color: theme.success,
                             marginRight: 8,
                           }}
                         >

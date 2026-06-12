@@ -158,7 +158,7 @@ export default function NewFieldScreen() {
           onPress={handleContinue}
           disabled={!fieldName.trim()}
         >
-          <Text style={[styles.continueButtonText, !fieldName.trim() && styles.continueButtonTextDisabled]}>
+          <Text style={[styles.continueButtonText, !fieldName.trim() && { color: theme.secondaryText }]}>
             Continue
           </Text>
         </TouchableOpacity>
@@ -231,8 +231,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  continueButtonTextDisabled: {
-    color: '#fff8',
   },
 }); 

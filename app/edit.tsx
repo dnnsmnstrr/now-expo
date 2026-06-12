@@ -995,7 +995,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
-    borderWidth: Platform.OS === 'ios' ? 0 : 1,
+    borderWidth: 1,
   },
   input: {
     borderWidth: 1,
